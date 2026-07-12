@@ -10,6 +10,7 @@ from app.api.v1.routers import (
     search,
     tags,
     tasks,
+    time_entries,
 )
 
 api_router = APIRouter()
@@ -20,3 +21,4 @@ api_router.include_router(tags.router)
 api_router.include_router(tasks.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(search.router)
+api_router.include_router(time_entries.router)

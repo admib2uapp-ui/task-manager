@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.task_repository import TaskRepository
+from app.repositories.time_entry_repository import TimeEntryRepository
 from app.schemas.dashboard import DashboardResponse, DashboardStats
 from app.services.project_service import ProjectService
 from app.services.task_service import TaskService
@@ -17,8 +18,11 @@ class DashboardService:
         self.session = session
         self.tasks = TaskRepository(session)
         self.projects = ProjectRepository(session)
+        self.time_entries = TimeEntryRepository(session)
 
-    async def summary(self, workspace_id: uuid.UUID) -> DashboardResponse:
+    async def summary(
+        self, workspace_id: uuid.UUID, user_id: uuid.UUID
+    ) -> DashboardResponse:
         now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = today_start + timedelta(days=1)
@@ -29,6 +33,9 @@ class DashboardService:
             now=now,
             today_start=today_start,
             today_end=today_end,
+        )
+        tracked_today = await self.time_entries.sum_between(
+            user_id, today_start, today_end
         )
 
         today = await self.tasks.list_due_between(workspace_id, today_start, today_end)
@@ -52,7 +59,7 @@ class DashboardService:
             pending_tasks=metrics["pending"],
             overdue_tasks=metrics["overdue"],
             due_today=metrics["due_today"],
-            tracked_today_seconds=0,  # populated in the time-tracking phase
+            tracked_today_seconds=tracked_today,
             completion_rate=completion_rate,
         )
 
