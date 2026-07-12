@@ -14,6 +14,7 @@ from app.api.v1.routers import (
     tags,
     tasks,
     time_entries,
+    ws,
 )
 
 api_router = APIRouter()
@@ -28,3 +29,4 @@ api_router.include_router(time_entries.router)
 api_router.include_router(analytics.router)
 api_router.include_router(notes.router)
 api_router.include_router(notifications.router)
+api_router.include_router(ws.router)

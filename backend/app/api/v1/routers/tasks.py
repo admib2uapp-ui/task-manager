@@ -5,6 +5,7 @@ import uuid
 from fastapi import APIRouter, File, Query, UploadFile, status
 
 from app.core.deps import CurrentUser, CurrentWorkspace, DbSession
+from app.core.ws_manager import publish_invalidate
 from app.schemas.common import MessageResponse
 from app.schemas.task import (
     ChecklistItemCreate,
@@ -53,7 +54,9 @@ async def create_task(
     payload: TaskCreate, workspace: CurrentWorkspace, db: DbSession
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.create(workspace.id, payload)
+    result = await service.create(workspace.id, payload)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.get("/{task_id}", response_model=TaskDetail)
@@ -72,7 +75,9 @@ async def update_task(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.update(task_id, workspace.id, payload)
+    result = await service.update(task_id, workspace.id, payload)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.post("/{task_id}/move", response_model=TaskRead)
@@ -83,7 +88,9 @@ async def move_task(
     db: DbSession,
 ) -> TaskRead:
     service = TaskService(db)
-    return await service.move(task_id, workspace.id, payload)
+    result = await service.move(task_id, workspace.id, payload)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.delete("/{task_id}", response_model=MessageResponse)
@@ -92,6 +99,7 @@ async def delete_task(
 ) -> MessageResponse:
     service = TaskService(db)
     await service.delete(task_id, workspace.id)
+    await publish_invalidate(workspace.id)
     return MessageResponse(message="Task deleted")
 
 

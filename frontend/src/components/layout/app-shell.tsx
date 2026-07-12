@@ -7,11 +7,13 @@ import { AppTopbar } from "@/components/layout/app-topbar";
 import { CommandPalette } from "@/features/command-palette/components/command-palette";
 import { QuickTaskDialog } from "@/features/tasks/components/quick-task-dialog";
 import { TaskDetailSheet } from "@/features/tasks/components/task-detail-sheet";
+import { useRealtimeSync } from "@/features/realtime/hooks/use-realtime-sync";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useUIStore } from "@/stores/ui-store";
 
 export function AppShell({ children }: { children: ReactNode }) {
   useKeyboardShortcuts();
+  useRealtimeSync();
   const quickCreateOpen = useUIStore((s) => s.quickCreateOpen);
   const setQuickCreateOpen = useUIStore((s) => s.setQuickCreateOpen);
   const openTaskId = useUIStore((s) => s.openTaskId);
