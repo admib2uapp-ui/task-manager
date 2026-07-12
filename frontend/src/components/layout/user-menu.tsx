@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/features/auth/store/auth-store";
+import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ interface UserMenuProps {
 
 export function UserMenu({ collapsed = false }: UserMenuProps) {
   const user = useAuthStore((s) => s.user);
-  const reset = useAuthStore((s) => s.reset);
+  const logout = useLogout();
 
   const displayName = user?.name ?? "Guest";
   const displayEmail = user?.email ?? "Not signed in";
@@ -71,7 +72,7 @@ export function UserMenu({ collapsed = false }: UserMenuProps) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={reset}>
+        <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
           <LogOut className="size-4" /> Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
