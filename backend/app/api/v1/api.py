@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1.routers import (
+    analytics,
     auth,
     dashboard,
     health,
@@ -22,3 +23,4 @@ api_router.include_router(tasks.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(search.router)
 api_router.include_router(time_entries.router)
+api_router.include_router(analytics.router)
