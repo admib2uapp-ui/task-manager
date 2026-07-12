@@ -12,9 +12,9 @@ export interface RegisterPayload {
 }
 
 export interface TokenPair {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
 }
 
 export interface AuthResponse extends TokenPair {

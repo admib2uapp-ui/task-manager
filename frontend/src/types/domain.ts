@@ -91,6 +91,9 @@ export interface Milestone {
   description: string | null;
   dueDate: ISODateString | null;
   completed: boolean;
+  position: number;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }
 
 export interface Project {
@@ -107,6 +110,9 @@ export interface Project {
   isFavorite: boolean;
   isArchived: boolean;
   tags: Tag[];
+  milestones?: Milestone[];
+  milestoneCount?: number;
+  completedMilestoneCount?: number;
   taskCount?: number;
   completedTaskCount?: number;
   createdAt: ISODateString;

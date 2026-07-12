@@ -15,16 +15,15 @@ from app.core.security import (
 )
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.repositories.workspace_repository import WorkspaceRepository
 from app.schemas.auth import AuthResponse, TokenPair, UserRead
-from app.utils.slug import unique_slug
+from app.services.workspace_service import WorkspaceService
 
 
 class AuthService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.users = UserRepository(session)
-        self.workspaces = WorkspaceRepository(session)
+        self.workspaces = WorkspaceService(session)
 
     # --------------------------- helpers -------------------------------
     def _issue_tokens(self, user: User) -> TokenPair:
@@ -55,14 +54,7 @@ class AuthService:
         )
 
         # Auto-provision a default workspace so the user can start immediately.
-        workspace = await self.workspaces.create(
-            name=f"{name}'s Workspace",
-            slug=unique_slug(name),
-            owner_id=user.id,
-        )
-        await self.workspaces.add_member(
-            workspace_id=workspace.id, user_id=user.id, role="owner"
-        )
+        await self.workspaces.create_for_user(user)
 
         return self._auth_response(user)
 

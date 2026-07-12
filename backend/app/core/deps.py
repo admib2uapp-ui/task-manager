@@ -9,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.exceptions import UnauthorizedError
 from app.models.user import User
+from app.models.workspace import Workspace
 from app.services.auth_service import AuthService
+from app.services.workspace_service import WorkspaceService
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -29,3 +31,11 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def get_current_workspace(db: DbSession, current_user: CurrentUser) -> Workspace:
+    service = WorkspaceService(db)
+    return await service.get_default(current_user)
+
+
+CurrentWorkspace = Annotated[Workspace, Depends(get_current_workspace)]

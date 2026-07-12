@@ -22,9 +22,9 @@ async def test_register_returns_tokens_and_user(client: AsyncClient) -> None:
     response = await client.post(REGISTER, json=CREDENTIALS)
     assert response.status_code == 201
     body = response.json()
-    assert body["token_type"] == "bearer"
-    assert body["access_token"]
-    assert body["refresh_token"]
+    assert body["tokenType"] == "bearer"
+    assert body["accessToken"]
+    assert body["refreshToken"]
     assert body["user"]["email"] == "ada@example.com"
     assert body["user"]["name"] == "Ada Lovelace"
     assert "password" not in body["user"]
@@ -44,7 +44,7 @@ async def test_login_success_and_me(client: AsyncClient) -> None:
         json={"email": CREDENTIALS["email"], "password": CREDENTIALS["password"]},
     )
     assert login.status_code == 200
-    access = login.json()["access_token"]
+    access = login.json()["accessToken"]
 
     me = await client.get(ME, headers=_auth_header(access))
     assert me.status_code == 200
@@ -67,19 +67,19 @@ async def test_me_requires_authentication(client: AsyncClient) -> None:
 
 async def test_refresh_issues_new_tokens(client: AsyncClient) -> None:
     register = await client.post(REGISTER, json=CREDENTIALS)
-    refresh_token = register.json()["refresh_token"]
+    refresh_token = register.json()["refreshToken"]
 
-    response = await client.post(REFRESH, json={"refresh_token": refresh_token})
+    response = await client.post(REFRESH, json={"refreshToken": refresh_token})
     assert response.status_code == 200
     body = response.json()
-    assert body["access_token"]
-    assert body["refresh_token"]
+    assert body["accessToken"]
+    assert body["refreshToken"]
 
 
 async def test_refresh_rejects_access_token(client: AsyncClient) -> None:
     register = await client.post(REGISTER, json=CREDENTIALS)
-    access_token = register.json()["access_token"]
+    access_token = register.json()["accessToken"]
 
     # Passing an access token to the refresh endpoint must fail.
-    response = await client.post(REFRESH, json={"refresh_token": access_token})
+    response = await client.post(REFRESH, json={"refreshToken": access_token})
     assert response.status_code == 401

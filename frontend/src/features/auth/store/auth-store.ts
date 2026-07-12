@@ -23,8 +23,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setSession: (response) => {
     setTokens({
-      accessToken: response.access_token,
-      refreshToken: response.refresh_token,
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
     });
     set({ user: response.user, status: "authenticated" });
   },

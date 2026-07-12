@@ -48,3 +48,19 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 
     app.dependency_overrides.clear()
     await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def auth_client(client: AsyncClient) -> AsyncClient:
+    """Client pre-authenticated as a freshly registered user."""
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "name": "Grace Hopper",
+            "email": "grace@example.com",
+            "password": "supersecret123",
+        },
+    )
+    token = response.json()["accessToken"]
+    client.headers.update({"Authorization": f"Bearer {token}"})
+    return client
