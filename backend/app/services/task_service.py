@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.exceptions import BadRequestError, NotFoundError
+from app.models.attachment import Attachment
 from app.models.task import Task
 from app.models.task_items import ChecklistItem, Subtask
 from app.repositories.project_repository import ProjectRepository
@@ -301,5 +304,54 @@ class TaskService:
     ) -> TaskDetail:
         task = await self._detail_or_404(task_id, workspace_id)
         task.dependencies = [d for d in task.dependencies if d.id != depends_on_id]
+        await self.session.flush()
+        return await self.get_detail(task_id, workspace_id)
+
+    # --------------------------- attachments ----------------------------
+    async def add_attachment(
+        self,
+        task_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+        *,
+        file_name: str,
+        content: bytes,
+        content_type: str,
+    ) -> TaskDetail:
+        if len(content) > settings.MAX_UPLOAD_BYTES:
+            raise BadRequestError("File exceeds the maximum allowed size")
+
+        task = await self._task_or_404(task_id, workspace_id)
+        suffix = Path(file_name).suffix[:20]
+        stored_name = f"{uuid.uuid4().hex}{suffix}"
+        upload_dir = Path(settings.UPLOAD_DIR)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        (upload_dir / stored_name).write_bytes(content)
+
+        task.attachments.append(
+            Attachment(
+                task_id=task.id,
+                file_name=file_name[:255],
+                stored_name=stored_name,
+                file_url=f"/uploads/{stored_name}",
+                mime_type=(content_type or "application/octet-stream")[:120],
+                size_bytes=len(content),
+            )
+        )
+        await self.session.flush()
+        return await self.get_detail(task_id, workspace_id)
+
+    async def delete_attachment(
+        self,
+        task_id: uuid.UUID,
+        attachment_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+    ) -> TaskDetail:
+        task = await self._task_or_404(task_id, workspace_id)
+        attachment = next((a for a in task.attachments if a.id == attachment_id), None)
+        if attachment is None:
+            raise NotFoundError("Attachment not found")
+        stored = Path(settings.UPLOAD_DIR) / attachment.stored_name
+        stored.unlink(missing_ok=True)
+        task.attachments.remove(attachment)
         await self.session.flush()
         return await self.get_detail(task_id, workspace_id)

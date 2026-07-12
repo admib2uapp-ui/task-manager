@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # asyncpg driver at the engine layer, so `postgresql://...` is fine here.
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/orbit"
 
+    # --- File uploads (local disk; swap for S3 in production) ---
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_BYTES: int = 25 * 1024 * 1024  # 25 MB
+
     # --- Security / JWT ---
     JWT_SECRET_KEY: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"

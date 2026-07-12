@@ -173,6 +173,7 @@ export interface Task {
   subtasks?: Subtask[];
   checklist?: ChecklistItem[];
   comments?: Comment[];
+  attachments?: Attachment[];
   dependencyIds?: ID[];
   // GitHub integration
   githubRepoUrl: string | null;

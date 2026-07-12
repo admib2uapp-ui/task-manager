@@ -3,16 +3,18 @@
 import {
   CalendarClock,
   Check,
+  Download,
   GitBranch,
   Link2,
   Loader2,
   MessageSquare,
+  Paperclip,
   Plus,
   Trash2,
   UserCircle2,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,7 +60,13 @@ import {
   useUpdateTask,
 } from "@/features/tasks/hooks/use-tasks";
 import { useAuthStore } from "@/features/auth/store/auth-store";
-import { formatDateTime, formatDuration, getInitials } from "@/lib/format";
+import {
+  formatBytes,
+  formatDateTime,
+  formatDuration,
+  getInitials,
+} from "@/lib/format";
+import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import { TASK_PRIORITY } from "@/types/domain";
 import type { Task, TaskPriority, TaskStatus } from "@/types/domain";
@@ -143,6 +151,7 @@ function TaskDetailBody({
   const [newSubtask, setNewSubtask] = useState("");
   const [newChecklist, setNewChecklist] = useState("");
   const [newComment, setNewComment] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTitle(task.title);
@@ -161,6 +170,7 @@ function TaskDetailBody({
   const subtasks = task.subtasks ?? [];
   const checklist = task.checklist ?? [];
   const comments = task.comments ?? [];
+  const attachments = task.attachments ?? [];
   const dependencyIds = task.dependencyIds ?? [];
   const dependencies = projectTasks.filter((t) => dependencyIds.includes(t.id));
   const availableDeps = projectTasks.filter(
@@ -512,6 +522,71 @@ function TaskDetailBody({
                 </SelectContent>
               </Select>
             )}
+          </Section>
+
+          {/* Attachments */}
+          <Section title="Attachments" icon={Paperclip}>
+            <div className="space-y-1.5">
+              {attachments.map((a) => (
+                <div
+                  key={a.id}
+                  className="group border-border flex items-center gap-2 rounded-lg border px-2.5 py-1.5"
+                >
+                  <Paperclip className="text-muted-foreground size-3.5 shrink-0" />
+                  <a
+                    href={`${env.apiBaseUrl}${a.fileUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-primary min-w-0 flex-1 truncate text-sm hover:underline"
+                  >
+                    {a.fileName}
+                  </a>
+                  <span className="text-muted-foreground shrink-0 text-xs">
+                    {formatBytes(a.sizeBytes)}
+                  </span>
+                  <a
+                    href={`${env.apiBaseUrl}${a.fileUrl}`}
+                    download={a.fileName}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="Download"
+                  >
+                    <Download className="size-3.5" />
+                  </a>
+                  <button
+                    onClick={() => mutations.deleteAttachment.mutate(a.id)}
+                    className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label="Delete attachment"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) mutations.uploadAttachment.mutate(file);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 w-full gap-1.5 rounded-lg border-dashed"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={mutations.uploadAttachment.isPending}
+            >
+              {mutations.uploadAttachment.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Plus className="size-3.5" />
+              )}
+              Upload file
+            </Button>
           </Section>
 
           {/* GitHub */}

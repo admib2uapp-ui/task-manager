@@ -46,6 +46,9 @@ Thumbs.db
 *.sqlite3
 backend/orbit.db
 
+# ---------- Uploads (local dev file storage) ----------
+backend/uploads/
+
 # ---------- Misc ----------
 coverage/
 dist/

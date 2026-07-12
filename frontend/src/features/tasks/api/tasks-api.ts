@@ -96,4 +96,12 @@ export const tasksApi = {
     api.post<Task>(`/tasks/${taskId}/dependencies`, { dependsOnId }),
   removeDependency: (taskId: string, dependsOnId: string) =>
     api.delete<Task>(`/tasks/${taskId}/dependencies/${dependsOnId}`),
+
+  uploadAttachment: (taskId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<Task>(`/tasks/${taskId}/attachments`, formData);
+  },
+  deleteAttachment: (taskId: string, attachmentId: string) =>
+    api.delete<Task>(`/tasks/${taskId}/attachments/${attachmentId}`),
 };

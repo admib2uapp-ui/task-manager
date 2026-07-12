@@ -20,6 +20,7 @@ from app.models.associations import task_dependencies, task_tags
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
+    from app.models.attachment import Attachment
     from app.models.comment import Comment
     from app.models.project import Project
     from app.models.tag import Tag
@@ -76,6 +77,12 @@ class Task(UUIDMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="ChecklistItem.position",
+    )
+    attachments: Mapped[list[Attachment]] = relationship(
+        back_populates="task",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="Attachment.created_at",
     )
     comments: Mapped[list[Comment]] = relationship(
         back_populates="task",

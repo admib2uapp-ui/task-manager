@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, File, Query, UploadFile, status
 
 from app.core.deps import CurrentUser, CurrentWorkspace, DbSession
 from app.schemas.common import MessageResponse
@@ -227,3 +227,37 @@ async def remove_dependency(
 ) -> TaskDetail:
     service = TaskService(db)
     return await service.remove_dependency(task_id, depends_on_id, workspace.id)
+
+
+# ----------------------------- attachments ---------------------------------
+@router.post(
+    "/{task_id}/attachments",
+    response_model=TaskDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_attachment(
+    task_id: uuid.UUID,
+    workspace: CurrentWorkspace,
+    db: DbSession,
+    file: UploadFile = File(...),
+) -> TaskDetail:
+    service = TaskService(db)
+    content = await file.read()
+    return await service.add_attachment(
+        task_id,
+        workspace.id,
+        file_name=file.filename or "file",
+        content=content,
+        content_type=file.content_type or "application/octet-stream",
+    )
+
+
+@router.delete("/{task_id}/attachments/{attachment_id}", response_model=TaskDetail)
+async def delete_attachment(
+    task_id: uuid.UUID,
+    attachment_id: uuid.UUID,
+    workspace: CurrentWorkspace,
+    db: DbSession,
+) -> TaskDetail:
+    service = TaskService(db)
+    return await service.delete_attachment(task_id, attachment_id, workspace.id)

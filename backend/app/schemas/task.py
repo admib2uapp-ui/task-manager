@@ -67,6 +67,17 @@ class CommentCreate(CamelModel):
     body: str = Field(min_length=1, max_length=5000)
 
 
+# ----------------------------- Attachments ----------------------------------
+class AttachmentRead(ORMModel):
+    id: uuid.UUID
+    task_id: uuid.UUID
+    file_name: str
+    file_url: str
+    mime_type: str
+    size_bytes: int
+    created_at: datetime
+
+
 # ------------------------------ Project ref ---------------------------------
 class ProjectRef(ORMModel):
     id: uuid.UUID
@@ -98,6 +109,7 @@ class TaskRead(ORMModel):
     tags: list[TagRead] = []
     subtasks: list[SubtaskRead] = []
     checklist: list[ChecklistItemRead] = []
+    attachments: list[AttachmentRead] = []
     created_at: datetime
     updated_at: datetime
 

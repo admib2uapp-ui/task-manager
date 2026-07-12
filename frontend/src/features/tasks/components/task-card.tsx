@@ -6,6 +6,7 @@ import {
   GitBranch,
   ListTree,
   MessageSquare,
+  Paperclip,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TASK_PRIORITY_META } from "@/config/constants";
@@ -32,6 +33,7 @@ export function TaskCard({
   const checklist = task.checklist ?? [];
   const doneChecklist = checklist.filter((c) => c.completed).length;
   const commentCount = task.comments?.length ?? 0;
+  const attachmentCount = task.attachments?.length ?? 0;
 
   const isOverdue =
     task.deadline &&
@@ -106,6 +108,12 @@ export function TaskCard({
             <span className="inline-flex items-center gap-1">
               <MessageSquare className="size-3.5" />
               {commentCount}
+            </span>
+          )}
+          {attachmentCount > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <Paperclip className="size-3.5" />
+              {attachmentCount}
             </span>
           )}
           {task.githubBranch && <GitBranch className="size-3.5" />}

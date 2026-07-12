@@ -3,6 +3,7 @@ from app.models.associations import (
     task_dependencies,
     task_tags,
 )
+from app.models.attachment import Attachment
 from app.models.base import Base
 from app.models.comment import Comment
 from app.models.milestone import Milestone
@@ -31,6 +32,7 @@ __all__ = [
     "TimeEntry",
     "Note",
     "Notification",
+    "Attachment",
     "project_tags",
     "task_tags",
     "task_dependencies",

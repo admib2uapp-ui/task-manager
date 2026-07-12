@@ -79,6 +79,18 @@ export function useTaskDetailMutations(taskId: string) {
     onSuccess: applyTask,
   });
 
+  const uploadAttachment = useMutation({
+    mutationFn: (file: File) => tasksApi.uploadAttachment(taskId, file),
+    onSuccess: applyTask,
+    onError: onError("Could not upload file"),
+  });
+
+  const deleteAttachment = useMutation({
+    mutationFn: (attachmentId: string) =>
+      tasksApi.deleteAttachment(taskId, attachmentId),
+    onSuccess: applyTask,
+  });
+
   return {
     addSubtask,
     toggleSubtask,
@@ -90,5 +102,7 @@ export function useTaskDetailMutations(taskId: string) {
     deleteComment,
     addDependency,
     removeDependency,
+    uploadAttachment,
+    deleteAttachment,
   };
 }
