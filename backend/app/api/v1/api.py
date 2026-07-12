@@ -9,6 +9,7 @@ from app.api.v1.routers import (
     health,
     notes,
     notifications,
+    oauth,
     projects,
     search,
     tags,
@@ -20,6 +21,7 @@ from app.api.v1.routers import (
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
+api_router.include_router(oauth.router)
 api_router.include_router(projects.router)
 api_router.include_router(tags.router)
 api_router.include_router(tasks.router)

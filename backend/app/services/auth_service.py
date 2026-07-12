@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 import uuid
 
 import jwt
@@ -56,6 +57,29 @@ class AuthService:
         # Auto-provision a default workspace so the user can start immediately.
         await self.workspaces.create_for_user(user)
 
+        return self._auth_response(user)
+
+    async def oauth_login(
+        self,
+        *,
+        email: str,
+        name: str | None = None,
+        avatar_url: str | None = None,
+    ) -> AuthResponse:
+        """Find or provision a user from a verified OAuth identity."""
+        email = email.lower()
+        user = await self.users.get_by_email(email)
+        if user is None:
+            user = await self.users.create(
+                name=name or email.split("@")[0],
+                email=email,
+                hashed_password=hash_password(secrets.token_urlsafe(32)),
+                avatar_url=avatar_url,
+            )
+            await self.workspaces.create_for_user(user)
+        elif avatar_url and not user.avatar_url:
+            user.avatar_url = avatar_url
+            await self.session.flush()
         return self._auth_response(user)
 
     async def authenticate(self, *, email: str, password: str) -> AuthResponse:

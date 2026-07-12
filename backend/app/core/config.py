@@ -46,6 +46,14 @@ class Settings(BaseSettings):
         ]
     )
 
+    # --- OAuth (optional; dormant until credentials are provided) ---
+    FRONTEND_URL: str = "http://localhost:3000"
+    OAUTH_REDIRECT_BASE: str = "http://localhost:8000"
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def _split_cors(cls, value: object) -> object:
@@ -61,6 +69,14 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() in {"production", "prod"}
+
+    @property
+    def google_enabled(self) -> bool:
+        return bool(self.GOOGLE_CLIENT_ID and self.GOOGLE_CLIENT_SECRET)
+
+    @property
+    def github_enabled(self) -> bool:
+        return bool(self.GITHUB_CLIENT_ID and self.GITHUB_CLIENT_SECRET)
 
 
 @lru_cache
