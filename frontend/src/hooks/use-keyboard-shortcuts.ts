@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import { toast } from "sonner";
+import { useHistoryStore } from "@/stores/history-store";
 import { useUIStore } from "@/stores/ui-store";
 
 /**
@@ -24,6 +26,24 @@ export function useKeyboardShortcuts() {
       if (mod && event.key.toLowerCase() === "k") {
         event.preventDefault();
         toggleCommandPalette();
+        return;
+      }
+
+      // Undo / redo (allowed even while typing so forms keep native behaviour
+      // only when there is nothing on the app history stack)
+      if (mod && event.key.toLowerCase() === "z") {
+        const history = useHistoryStore.getState();
+        if (event.shiftKey) {
+          if (history.redoStack.length > 0) {
+            event.preventDefault();
+            const entry = history.redo();
+            if (entry) toast(`Redid: ${entry.label}`);
+          }
+        } else if (!isTyping && history.undoStack.length > 0) {
+          event.preventDefault();
+          const entry = history.undo();
+          if (entry) toast(`Undid: ${entry.label}`);
+        }
         return;
       }
 

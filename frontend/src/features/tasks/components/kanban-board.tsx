@@ -14,10 +14,12 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { KANBAN_COLUMNS } from "@/config/constants";
 import { KanbanColumn } from "@/features/tasks/components/kanban-column";
 import { TaskCard } from "@/features/tasks/components/task-card";
 import { useMoveTask } from "@/features/tasks/hooks/use-tasks";
+import { useHistoryStore } from "@/stores/history-store";
 import type { Task, TaskStatus } from "@/types/domain";
 
 type Columns = Record<TaskStatus, Task[]>;
@@ -55,6 +57,7 @@ export function KanbanBoard({
   onAddTask,
 }: KanbanBoardProps) {
   const move = useMoveTask(projectId);
+  const pushHistory = useHistoryStore((s) => s.push);
   const [columns, setColumnsState] = useState<Columns>(() =>
     groupByStatus(tasks),
   );
@@ -128,6 +131,7 @@ export function KanbanBoard({
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    const original = activeTask;
     draggingRef.current = false;
     setActiveTask(null);
     if (!over) return;
@@ -152,6 +156,25 @@ export function KanbanBoard({
     const finalIndex = reordered.findIndex((t) => t.id === activeId);
     const position = computePosition(reordered, finalIndex);
     move.mutate({ id: activeId, status: container, position });
+
+    if (
+      original &&
+      (original.status !== container || original.position !== position)
+    ) {
+      const from = { status: original.status, position: original.position };
+      const to = { status: container, position };
+      pushHistory({
+        label: "Move task",
+        undo: () => move.mutate({ id: activeId, ...from }),
+        redo: () => move.mutate({ id: activeId, ...to }),
+      });
+      toast("Task moved", {
+        action: {
+          label: "Undo",
+          onClick: () => move.mutate({ id: activeId, ...from }),
+        },
+      });
+    }
   }
 
   function toggleCollapse(status: TaskStatus) {
