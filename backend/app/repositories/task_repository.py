@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import ColumnElement, Select, func, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.models.associations import task_tags
@@ -98,3 +99,86 @@ class TaskRepository(BaseRepository[Task]):
             .where(Task.project_id == project_id, Task.status == "done")
         )
         return int(total or 0), int(done or 0)
+
+    # ---------------------------- dashboard -----------------------------
+    async def list_due_between(
+        self, workspace_id: uuid.UUID, start: datetime, end: datetime
+    ) -> list[Task]:
+        stmt = (
+            self._workspace_scoped(workspace_id)
+            .where(
+                Task.deadline >= start,
+                Task.deadline < end,
+                Task.status != "done",
+            )
+            .order_by(Task.deadline)
+        )
+        result = await self.session.scalars(stmt)
+        return list(result.unique().all())
+
+    async def list_upcoming(
+        self,
+        workspace_id: uuid.UUID,
+        after: datetime,
+        until: datetime,
+        limit: int,
+    ) -> list[Task]:
+        stmt = (
+            self._workspace_scoped(workspace_id)
+            .where(
+                Task.deadline > after,
+                Task.deadline <= until,
+                Task.status != "done",
+            )
+            .order_by(Task.deadline)
+            .limit(limit)
+        )
+        result = await self.session.scalars(stmt)
+        return list(result.unique().all())
+
+    async def list_recent(self, workspace_id: uuid.UUID, limit: int) -> list[Task]:
+        stmt = (
+            self._workspace_scoped(workspace_id)
+            .order_by(Task.updated_at.desc())
+            .limit(limit)
+        )
+        result = await self.session.scalars(stmt)
+        return list(result.unique().all())
+
+    async def _count(
+        self, workspace_id: uuid.UUID, *conditions: ColumnElement[bool]
+    ) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(Task)
+            .join(Project, Task.project_id == Project.id)
+            .where(Project.workspace_id == workspace_id, *conditions)
+        )
+        return int(await self.session.scalar(stmt) or 0)
+
+    async def metrics(
+        self,
+        workspace_id: uuid.UUID,
+        *,
+        now: datetime,
+        today_start: datetime,
+        today_end: datetime,
+    ) -> dict[str, int]:
+        total = await self._count(workspace_id)
+        done = await self._count(workspace_id, Task.status == "done")
+        overdue = await self._count(
+            workspace_id, Task.deadline < now, Task.status != "done"
+        )
+        due_today = await self._count(
+            workspace_id,
+            Task.deadline >= today_start,
+            Task.deadline < today_end,
+            Task.status != "done",
+        )
+        return {
+            "total": total,
+            "done": done,
+            "pending": total - done,
+            "overdue": overdue,
+            "due_today": due_today,
+        }

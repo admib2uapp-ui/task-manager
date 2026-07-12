@@ -199,9 +199,7 @@ class TaskService:
         task = await self._task_or_404(task_id, workspace_id)
         position = (len(task.checklist_items) + 1) * 1024.0
         task.checklist_items.append(
-            ChecklistItem(
-                task_id=task.id, content=data.content, position=position
-            )
+            ChecklistItem(task_id=task.id, content=data.content, position=position)
         )
         await self.session.flush()
         return await self.get_detail(task_id, workspace_id)
