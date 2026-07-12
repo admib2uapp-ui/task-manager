@@ -135,13 +135,15 @@ npm run format:check
 
 - [x] **Phase 0** — Foundation: monorepo, theme, app shell, API client,
       FastAPI skeleton, DB + migrations, health checks, quality gates.
-- [ ] **Phase 1** — Authentication (JWT access/refresh, register/login, profile).
-- [ ] **Phase 2** — Projects (CRUD, detail tabs, tags, favorites, archive).
-- [ ] **Phase 3** — Tasks + Kanban board (dnd-kit, full task detail).
-- [ ] **Phase 4** — Dashboard.
-- [ ] **Phase 5** — Command palette, search, filters, shortcuts.
-- [ ] **Phase 6** — Time tracking.
-- [ ] **Phase 7** — Calendar.
-- [ ] **Phase 8** — Analytics.
-- [ ] **Phase 9** — Notifications, documents, GitHub integration, attachments.
-- [ ] **Phase 10** — PWA/offline, undo/redo, OAuth, real-time, polish.
+- [x] **Phase 1** — Authentication (JWT access/refresh, register/login, profile).
+- [x] **Phase 2** — Projects (CRUD, detail tabs, tags, milestones, favorites, archive).
+- [x] **Phase 3** — Tasks + Kanban board (dnd-kit, full task detail).
+- [x] **Phase 4** — Dashboard.
+- [x] **Phase 5** — Command palette + global search.
+- [x] **Phase 6** — Time tracking (timer, manual entries, rollups).
+- [x] **Phase 7** — Calendar (month + agenda, drag-to-reschedule).
+- [x] **Phase 8** — Analytics (recharts).
+- [x] **Phase 9** — Documents (markdown notes) + GitHub page.
+- [~] **Phase 10** — Settings + PWA done; notifications, attachments, OAuth,
+      real-time and offline/undo-redo remain.
+
