@@ -22,6 +22,7 @@ import { PROJECT_STATUS_META } from "@/config/constants";
 import { getProjectIcon } from "@/config/icons";
 import { MilestonesList } from "@/features/projects/components/milestones-list";
 import { ProjectFormDialog } from "@/features/projects/components/project-form-dialog";
+import { ProjectBoard } from "@/features/tasks/components/project-board";
 import {
   useProject,
   useUpdateProject,
@@ -168,8 +169,12 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="mt-8">
+      <Tabs defaultValue="board" className="mt-8">
         <TabsList>
+          <TabsTrigger value="board">
+            Board
+            {project.taskCount ? ` (${project.taskCount})` : ""}
+          </TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="milestones">
             Milestones
@@ -177,6 +182,10 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           </TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="board" className="mt-6">
+          <ProjectBoard projectId={project.id} />
+        </TabsContent>
 
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

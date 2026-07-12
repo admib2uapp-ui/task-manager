@@ -9,6 +9,7 @@ from app.models.project import Project
 from app.repositories.milestone_repository import MilestoneRepository
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.tag_repository import TagRepository
+from app.repositories.task_repository import TaskRepository
 from app.schemas.project import (
     MilestoneCreate,
     MilestoneRead,
@@ -25,6 +26,7 @@ class ProjectService:
         self.projects = ProjectRepository(session)
         self.tags = TagRepository(session)
         self.milestones = MilestoneRepository(session)
+        self.tasks = TaskRepository(session)
 
     # ------------------------------ mapping ----------------------------
     @staticmethod
@@ -68,7 +70,11 @@ class ProjectService:
 
     async def get(self, project_id: uuid.UUID, workspace_id: uuid.UUID) -> ProjectRead:
         project = await self._get_or_404(project_id, workspace_id)
-        return self.to_read(project)
+        read = self.to_read(project)
+        total, done = await self.tasks.count_for_project(project_id)
+        read.task_count = total
+        read.completed_task_count = done
+        return read
 
     async def create(self, workspace_id: uuid.UUID, data: ProjectCreate) -> ProjectRead:
         tags = await self.tags.get_many(workspace_id, data.tag_ids)

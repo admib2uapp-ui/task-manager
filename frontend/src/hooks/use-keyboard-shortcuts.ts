@@ -9,7 +9,7 @@ import { useUIStore } from "@/stores/ui-store";
  */
 export function useKeyboardShortcuts() {
   const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette);
-  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const setQuickCreateOpen = useUIStore((s) => s.setQuickCreateOpen);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -29,14 +29,14 @@ export function useKeyboardShortcuts() {
 
       if (isTyping) return;
 
-      // "c" — quick create (opens the command palette in Phase 0)
+      // "c" — quick create task
       if (event.key.toLowerCase() === "c" && !mod) {
         event.preventDefault();
-        setCommandPaletteOpen(true);
+        setQuickCreateOpen(true);
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [toggleCommandPalette, setCommandPaletteOpen]);
+  }, [toggleCommandPalette, setQuickCreateOpen]);
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -8,6 +9,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
 import { flatNavigation } from "@/config/navigation";
 import { useUIStore } from "@/stores/ui-store";
@@ -21,6 +23,7 @@ export function CommandPalette() {
   const router = useRouter();
   const open = useUIStore((s) => s.commandPaletteOpen);
   const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const setQuickCreateOpen = useUIStore((s) => s.setQuickCreateOpen);
 
   function run(action: () => void) {
     setOpen(false);
@@ -37,6 +40,16 @@ export function CommandPalette() {
       <CommandInput placeholder="Type a command or search…" />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+        <CommandGroup heading="Actions">
+          <CommandItem
+            value="new task create quick add"
+            onSelect={() => run(() => setQuickCreateOpen(true))}
+          >
+            <Plus className="size-4" />
+            Create task
+          </CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
         <CommandGroup heading="Navigation">
           {flatNavigation.map((item) => {
             const Icon = item.icon;

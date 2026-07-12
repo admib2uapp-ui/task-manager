@@ -21,3 +21,39 @@ project_tags = Table(
         primary_key=True,
     ),
 )
+
+# Many-to-many association between tasks and tags.
+task_tags = Table(
+    "task_tags",
+    Base.metadata,
+    Column(
+        "task_id",
+        Uuid,
+        ForeignKey("tasks.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "tag_id",
+        Uuid,
+        ForeignKey("tags.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+# Self-referential task dependencies (task depends_on another task).
+task_dependencies = Table(
+    "task_dependencies",
+    Base.metadata,
+    Column(
+        "task_id",
+        Uuid,
+        ForeignKey("tasks.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "depends_on_id",
+        Uuid,
+        ForeignKey("tasks.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)

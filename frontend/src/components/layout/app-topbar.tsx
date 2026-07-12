@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 export function AppTopbar() {
   const setMobileSidebarOpen = useUIStore((s) => s.setMobileSidebarOpen);
   const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const setQuickCreateOpen = useUIStore((s) => s.setQuickCreateOpen);
 
   return (
     <header className="border-border bg-background/80 sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-xl sm:px-5">
@@ -41,7 +42,7 @@ export function AppTopbar() {
       <div className="flex flex-1 items-center justify-end gap-1.5">
         <Button
           size="sm"
-          onClick={() => setCommandPaletteOpen(true)}
+          onClick={() => setQuickCreateOpen(true)}
           className="hidden h-9 gap-1.5 rounded-xl sm:inline-flex"
         >
           <Plus className="size-4" />
@@ -49,7 +50,7 @@ export function AppTopbar() {
         </Button>
         <Button
           size="icon"
-          onClick={() => setCommandPaletteOpen(true)}
+          onClick={() => setQuickCreateOpen(true)}
           className="size-9 rounded-xl sm:hidden"
           aria-label="Create"
         >
