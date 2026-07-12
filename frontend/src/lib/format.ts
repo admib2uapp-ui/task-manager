@@ -1,0 +1,63 @@
+import { format, formatDistanceToNow, isValid, parseISO } from "date-fns";
+import type { ISODateString } from "@/types/domain";
+
+function toDate(value: ISODateString | Date | null | undefined): Date | null {
+  if (!value) return null;
+  const date = value instanceof Date ? value : parseISO(value);
+  return isValid(date) ? date : null;
+}
+
+export function formatDate(
+  value: ISODateString | Date | null | undefined,
+  pattern = "MMM d, yyyy",
+): string {
+  const date = toDate(value);
+  return date ? format(date, pattern) : "—";
+}
+
+export function formatDateTime(
+  value: ISODateString | Date | null | undefined,
+): string {
+  return formatDate(value, "MMM d, yyyy • h:mm a");
+}
+
+export function formatRelative(
+  value: ISODateString | Date | null | undefined,
+): string {
+  const date = toDate(value);
+  return date ? formatDistanceToNow(date, { addSuffix: true }) : "—";
+}
+
+/** Human-readable duration from seconds, e.g. "2h 15m". */
+export function formatDuration(totalSeconds: number): string {
+  if (!totalSeconds || totalSeconds < 0) return "0m";
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || hours === 0) parts.push(`${minutes}m`);
+  return parts.join(" ");
+}
+
+/** Precise HH:MM:SS clock used by the timer widget. */
+export function formatClock(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+export function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export function pluralize(count: number, singular: string, plural?: string) {
+  return count === 1 ? singular : (plural ?? `${singular}s`);
+}
