@@ -15,5 +15,8 @@ export const authApi = {
 
   me: () => api.get<User>("/auth/me"),
 
+  updateProfile: (payload: { name?: string; avatarUrl?: string | null }) =>
+    api.patch<User>("/auth/me", payload),
+
   logout: () => api.post<void>("/auth/logout"),
 };
