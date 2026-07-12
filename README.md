@@ -145,6 +145,7 @@ npm run format:check
 - [x] **Phase 8** — Analytics (recharts).
 - [x] **Phase 9** — Documents (markdown notes) + GitHub page.
 - [x] **Phase 10** — Settings, PWA, notifications (auto-generated deadline/
-      overdue + comment alerts), file attachments. Optional extensions: Google/
-      GitHub OAuth, WebSocket real-time, offline/undo-redo.
+      overdue + comment alerts), file attachments.
+- [x] **Extensions** — WebSocket real-time sync, undo/redo (board moves),
+      Google/GitHub OAuth (config-gated). Remaining: full offline mutation queue.
 
