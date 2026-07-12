@@ -4,6 +4,7 @@ import { Bell, Menu, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { useUnreadCount } from "@/features/notifications/hooks/use-notifications";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ export function AppTopbar() {
   const setMobileSidebarOpen = useUIStore((s) => s.setMobileSidebarOpen);
   const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
   const setQuickCreateOpen = useUIStore((s) => s.setQuickCreateOpen);
+  const { data: unreadCount = 0 } = useUnreadCount();
 
   return (
     <header className="border-border bg-background/80 sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-xl sm:px-5">
@@ -65,7 +67,11 @@ export function AppTopbar() {
         >
           <Link href="/notifications" aria-label="Notifications">
             <Bell className="size-[18px]" />
-            <span className="bg-primary absolute top-2 right-2 size-1.5 rounded-full" />
+            {unreadCount > 0 && (
+              <span className="bg-primary text-primary-foreground absolute top-1.5 right-1.5 grid min-w-4 place-items-center rounded-full px-1 text-[10px] leading-4 font-semibold">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </Link>
         </Button>
 

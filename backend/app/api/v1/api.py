@@ -8,6 +8,7 @@ from app.api.v1.routers import (
     dashboard,
     health,
     notes,
+    notifications,
     projects,
     search,
     tags,
@@ -26,3 +27,4 @@ api_router.include_router(search.router)
 api_router.include_router(time_entries.router)
 api_router.include_router(analytics.router)
 api_router.include_router(notes.router)
+api_router.include_router(notifications.router)

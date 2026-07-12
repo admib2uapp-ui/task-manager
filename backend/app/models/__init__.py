@@ -7,6 +7,7 @@ from app.models.base import Base
 from app.models.comment import Comment
 from app.models.milestone import Milestone
 from app.models.note import Note
+from app.models.notification import Notification
 from app.models.project import Project
 from app.models.tag import Tag
 from app.models.task import Task
@@ -29,6 +30,7 @@ __all__ = [
     "Comment",
     "TimeEntry",
     "Note",
+    "Notification",
     "project_tags",
     "task_tags",
     "task_dependencies",

@@ -244,11 +244,24 @@ class TaskService:
     ) -> CommentRead:
         from app.models.comment import Comment
 
-        await self._task_or_404(task_id, workspace_id)
+        task = await self._task_or_404(task_id, workspace_id)
         comment = Comment(task_id=task_id, author_id=author_id, body=data.body)
         self.session.add(comment)
         await self.session.flush()
         await self.session.refresh(comment, attribute_names=["author"])
+
+        if task.assignee_id and task.assignee_id != author_id:
+            from app.services.notification_service import NotificationService
+
+            await NotificationService(self.session).create(
+                user_id=task.assignee_id,
+                type_="comment",
+                title="New comment",
+                body=f"on “{task.title}”",
+                entity_type="task",
+                entity_id=task.id,
+            )
+
         return CommentRead.model_validate(comment)
 
     async def delete_comment(
