@@ -10,6 +10,8 @@ interface UIState {
   commandPaletteOpen: boolean;
   /** quick create task/project modal */
   quickCreateOpen: boolean;
+  /** globally-opened task detail (e.g. from command palette) */
+  openTaskId: string | null;
 
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -17,6 +19,7 @@ interface UIState {
   setCommandPaletteOpen: (open: boolean) => void;
   toggleCommandPalette: () => void;
   setQuickCreateOpen: (open: boolean) => void;
+  setOpenTaskId: (id: string | null) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -26,6 +29,7 @@ export const useUIStore = create<UIState>()(
       mobileSidebarOpen: false,
       commandPaletteOpen: false,
       quickCreateOpen: false,
+      openTaskId: null,
 
       toggleSidebar: () =>
         set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -35,6 +39,7 @@ export const useUIStore = create<UIState>()(
       toggleCommandPalette: () =>
         set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
       setQuickCreateOpen: (open) => set({ quickCreateOpen: open }),
+      setOpenTaskId: (id) => set({ openTaskId: id }),
     }),
     {
       name: "orbit.ui",

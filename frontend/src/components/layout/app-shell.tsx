@@ -6,6 +6,7 @@ import { MobileSidebar } from "@/components/layout/mobile-sidebar";
 import { AppTopbar } from "@/components/layout/app-topbar";
 import { CommandPalette } from "@/features/command-palette/components/command-palette";
 import { QuickTaskDialog } from "@/features/tasks/components/quick-task-dialog";
+import { TaskDetailSheet } from "@/features/tasks/components/task-detail-sheet";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -13,6 +14,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   useKeyboardShortcuts();
   const quickCreateOpen = useUIStore((s) => s.quickCreateOpen);
   const setQuickCreateOpen = useUIStore((s) => s.setQuickCreateOpen);
+  const openTaskId = useUIStore((s) => s.openTaskId);
+  const setOpenTaskId = useUIStore((s) => s.setOpenTaskId);
 
   return (
     <div className="bg-background flex h-dvh overflow-hidden">
@@ -28,6 +31,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       <QuickTaskDialog
         open={quickCreateOpen}
         onOpenChange={setQuickCreateOpen}
+      />
+      <TaskDetailSheet
+        taskId={openTaskId}
+        open={Boolean(openTaskId)}
+        onOpenChange={(o) => !o && setOpenTaskId(null)}
+        onDeleted={() => setOpenTaskId(null)}
       />
     </div>
   );
