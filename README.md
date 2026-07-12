@@ -144,6 +144,7 @@ npm run format:check
 - [x] **Phase 7** — Calendar (month + agenda, drag-to-reschedule).
 - [x] **Phase 8** — Analytics (recharts).
 - [x] **Phase 9** — Documents (markdown notes) + GitHub page.
-- [~] **Phase 10** — Settings + PWA done; notifications, attachments, OAuth,
-      real-time and offline/undo-redo remain.
+- [x] **Phase 10** — Settings, PWA, notifications (auto-generated deadline/
+      overdue + comment alerts), file attachments. Optional extensions: Google/
+      GitHub OAuth, WebSocket real-time, offline/undo-redo.
 
