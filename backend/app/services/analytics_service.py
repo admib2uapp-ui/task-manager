@@ -38,9 +38,7 @@ class AnalyticsService:
                 .group_by(Task.status)
             )
         ).all()
-        status_map: dict[str, int] = {
-            row[0]: row[1] for row in status_rows
-        }
+        status_map: dict[str, int] = {row[0]: row[1] for row in status_rows}
         total = sum(status_map.values())
         completed = status_map.get("done", 0)
 
