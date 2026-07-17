@@ -1,1 +1,0 @@
-// Middleware disabled — auth removed.
