@@ -36,7 +36,6 @@ import {
   useAIReports,
   useCodeIssues,
   useFileTree,
-  useRepoInfo,
   useRepoLanguages,
   useRepository,
   useRepositoryScore,
@@ -79,7 +78,6 @@ interface RepositoryDetailViewProps {
 
 export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps) {
   const { data: conn, isLoading: connLoading } = useRepository(connectionId);
-  const { data: repoInfo } = useRepoInfo(connectionId);
   const { data: languages } = useRepoLanguages(connectionId);
   const { data: scans } = useRepositoryScans(connectionId);
   const { data: fileTree } = useFileTree(connectionId);
@@ -136,7 +134,6 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
   const stars = (meta?.stars as number) ?? 0;
   const description = (meta?.description as string) ?? null;
   const isPrivate = (meta?.isPrivate as boolean) ?? false;
-  const defaultBranch = (meta?.defaultBranch as string) ?? "main";
   const isScanning = latestScan?.status === "pending" || latestScan?.status === "running";
 
   const filteredIssues = issueFilter
@@ -147,7 +144,6 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
     (r) => r.reportType === "executive" || r.reportType === "architecture",
   );
   const execReport = aiReports.find((r) => r.reportType === "executive");
-  const archReport = aiReports.find((r) => r.reportType === "architecture");
 
   return (
     <div className="space-y-6">

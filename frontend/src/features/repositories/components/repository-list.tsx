@@ -1,6 +1,6 @@
 "use client";
 
-import { GitBranch, Loader2, Plus } from "lucide-react";
+import { GitBranch, Plus } from "lucide-react";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/shared/page-container";

@@ -20,7 +20,7 @@ import { getAccessToken } from "@/lib/auth-storage";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -270,7 +270,7 @@ export function GitHubView() {
             <div>
               <h3 className="text-lg font-semibold">Connect GitHub Account</h3>
               <p className="text-muted-foreground mt-1 max-w-md text-sm">
-                Authorize Orbit to access your public repositories. You'll be
+                Authorize Orbit to access your public repositories. You&apos;ll be
                 able to browse, connect, and AI-analyze repos directly from here.
               </p>
             </div>
@@ -569,7 +569,7 @@ export function GitHubView() {
             <AlertDialogTitle>Disconnect GitHub?</AlertDialogTitle>
             <AlertDialogDescription>
               This will remove your GitHub connection. Previously connected
-              repositories will keep their existing analysis data, but you won't
+              repositories will keep their existing analysis data, but you won&apos;t
               be able to connect new ones until you re-authorize.
             </AlertDialogDescription>
           </AlertDialogHeader>

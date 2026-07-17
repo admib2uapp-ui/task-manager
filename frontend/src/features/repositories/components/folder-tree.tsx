@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, File, Folder, FolderOpen } from "lucide-react";
+import { ChevronRight, Folder, FolderOpen } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { FileTreeItem } from "@/features/repositories/api/repositories-api";
