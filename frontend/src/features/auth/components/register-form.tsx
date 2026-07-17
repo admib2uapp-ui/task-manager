@@ -26,7 +26,11 @@ export function RegisterForm() {
   });
 
   function onSubmit(values: RegisterValues) {
-    register.mutate(values);
+    register.mutate({
+      name: values.name,
+      email: values.email,
+      password: values.password,
+    });
   }
 
   return (

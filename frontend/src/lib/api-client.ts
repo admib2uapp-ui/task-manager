@@ -1,12 +1,6 @@
 import { API_URL } from "@/lib/env";
-import {
-  clearTokens,
-  getAccessToken,
-  getRefreshToken,
-  setTokens,
-} from "@/lib/auth-storage";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 
-/** Structured error thrown by the API client. */
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string | undefined;
@@ -37,13 +31,9 @@ export class ApiError extends Error {
 }
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
-  /** JSON-serialisable body; set automatically with the correct headers. */
   body?: unknown;
-  /** query params appended to the URL */
   params?: Record<string, string | number | boolean | undefined | null>;
-  /** skip attaching the Authorization header (e.g. login/register) */
   skipAuth?: boolean;
-  /** internal flag to prevent infinite refresh loops */
   _retry?: boolean;
 }
 
@@ -62,57 +52,29 @@ function buildUrl(path: string, params?: RequestOptions["params"]): string {
   return url.toString();
 }
 
-/* -------------------- Refresh handling (single-flight) ------------------ */
-
-let refreshPromise: Promise<boolean> | null = null;
-
-async function refreshAccessToken(): Promise<boolean> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return false;
-
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      try {
-        const res = await fetch(`${API_URL}/auth/refresh`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refreshToken }),
-        });
-        if (!res.ok) return false;
-        const data = (await res.json()) as {
-          accessToken: string;
-          refreshToken: string;
-        };
-        setTokens({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        });
-        return true;
-      } catch {
-        return false;
-      } finally {
-        refreshPromise = null;
-      }
-    })();
+async function getSessionToken(): Promise<string | null> {
+  try {
+    const supabase = createSupabaseClient();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
   }
-  return refreshPromise;
 }
-
-/* ------------------------------ Core request ---------------------------- */
 
 async function request<T>(
   method: string,
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { body, params, skipAuth, _retry, headers, ...init } = options;
+  const { body, params, skipAuth, headers, ...init } = options;
 
   const finalHeaders = new Headers(headers);
   if (body !== undefined && !(body instanceof FormData)) {
     finalHeaders.set("Content-Type", "application/json");
   }
   if (!skipAuth) {
-    const token = getAccessToken();
+    const token = await getSessionToken();
     if (token) finalHeaders.set("Authorization", `Bearer ${token}`);
   }
 
@@ -127,15 +89,6 @@ async function request<T>(
           ? body
           : JSON.stringify(body),
   });
-
-  // Attempt a one-time refresh + retry on 401.
-  if (response.status === 401 && !skipAuth && !_retry) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      return request<T>(method, path, { ...options, _retry: true });
-    }
-    clearTokens();
-  }
 
   if (response.status === 204) {
     return undefined as T;

@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getAccessToken } from "@/lib/auth-storage";
+import { createClient } from "@/lib/supabase/client";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
@@ -178,6 +178,12 @@ export function GitHubView() {
   const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [connectingRepo, setConnectingRepo] = useState<string | null>(null);
 
+  const connectUrl = useCallback(async () => {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return `${githubApi.connectUrl()}?token=${session?.access_token ?? ""}`;
+  }, []);
+
   const connectedParam = searchParams.get("connected");
   const errorParam = searchParams.get("error");
 
@@ -276,7 +282,9 @@ export function GitHubView() {
             </div>
             <button
               onClick={() => {
-                window.location.href = `${githubApi.connectUrl()}?token=${getAccessToken()}`;
+                connectUrl().then((url) => {
+                  window.location.href = url;
+                });
               }}
               className="bg-foreground text-background hover:bg-foreground/90 inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors"
             >

@@ -3,31 +3,33 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { FullScreenLoader } from "@/components/shared/full-screen-loader";
-import { getAccessToken } from "@/lib/auth-storage";
+import { createClient } from "@/lib/supabase/client";
 import { useCurrentUser } from "@/features/auth/hooks/use-auth";
 import { useAuthStore } from "@/features/auth/store/auth-store";
 
-/**
- * Client-side route guard for authenticated areas.
- * Validates the stored token against the API and redirects to /login on failure.
- */
 export function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
   const setUser = useAuthStore((s) => s.setUser);
   const reset = useAuthStore((s) => s.reset);
   const user = useAuthStore((s) => s.user);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setHasSession(Boolean(session));
+    });
+  }, []);
 
-  const tokenPresent = mounted && Boolean(getAccessToken());
   const { data, isError, isLoading } = useCurrentUser();
 
   useEffect(() => {
-    if (mounted && !tokenPresent) {
+    if (mounted && hasSession === false) {
       router.replace("/login");
     }
-  }, [mounted, tokenPresent, router]);
+  }, [mounted, hasSession, router]);
 
   useEffect(() => {
     if (data) setUser(data);
@@ -40,7 +42,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     }
   }, [isError, reset, router]);
 
-  if (!mounted || !tokenPresent || isLoading || !user) {
+  if (!mounted || hasSession === null || isLoading || !user) {
     return <FullScreenLoader label="Preparing your workspace…" />;
   }
 

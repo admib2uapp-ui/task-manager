@@ -1,7 +1,6 @@
 "use client";
 
 import { authApi } from "@/features/auth/api/auth-api";
-import { useOAuthProviders } from "@/features/auth/hooks/use-oauth-providers";
 import { Button } from "@/components/ui/button";
 
 function GoogleIcon() {
@@ -24,39 +23,29 @@ function GithubIcon() {
 }
 
 export function OAuthButtons() {
-  const { data: providers } = useOAuthProviders();
-  const google = providers?.google;
-  const github = providers?.github;
-
-  if (!google && !github) return null;
-
   return (
     <div className="space-y-3">
       <div className="grid gap-2">
-        {google && (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 w-full gap-2 rounded-xl"
-            onClick={() => {
-              window.location.href = authApi.oauthStartUrl("google");
-            }}
-          >
-            <GoogleIcon /> Continue with Google
-          </Button>
-        )}
-        {github && (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 w-full gap-2 rounded-xl"
-            onClick={() => {
-              window.location.href = authApi.oauthStartUrl("github");
-            }}
-          >
-            <GithubIcon /> Continue with GitHub
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 w-full gap-2 rounded-xl"
+          onClick={() => {
+            authApi.signInWithOAuth("google");
+          }}
+        >
+          <GoogleIcon /> Continue with Google
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 w-full gap-2 rounded-xl"
+          onClick={() => {
+            authApi.signInWithOAuth("github");
+          }}
+        >
+          <GithubIcon /> Continue with GitHub
+        </Button>
       </div>
       <div className="relative flex items-center">
         <span className="bg-border h-px flex-1" />

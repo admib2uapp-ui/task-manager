@@ -3,25 +3,27 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { FullScreenLoader } from "@/components/shared/full-screen-loader";
-import { getAccessToken } from "@/lib/auth-storage";
+import { createClient } from "@/lib/supabase/client";
 
-/**
- * Wraps public auth pages. If a token already exists, send the user to the app.
- */
 export function GuestGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  const tokenPresent = mounted && Boolean(getAccessToken());
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (tokenPresent) router.replace("/dashboard");
-  }, [tokenPresent, router]);
+    setMounted(true);
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setHasSession(Boolean(session));
+    });
+  }, []);
 
-  if (!mounted) return <FullScreenLoader />;
-  if (tokenPresent) return <FullScreenLoader label="Redirecting…" />;
+  useEffect(() => {
+    if (hasSession) router.replace("/dashboard");
+  }, [hasSession, router]);
+
+  if (!mounted || hasSession === null) return <FullScreenLoader />;
+  if (hasSession) return <FullScreenLoader label="Redirecting…" />;
 
   return <>{children}</>;
 }

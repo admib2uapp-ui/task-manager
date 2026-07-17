@@ -1,33 +1,50 @@
-import { api } from "@/lib/api-client";
-import { API_URL } from "@/lib/env";
-import type { User } from "@/types/domain";
-import type {
-  AuthResponse,
-  LoginPayload,
-  RegisterPayload,
-} from "@/features/auth/types";
-
-export type OAuthProvider = "google" | "github";
+import { createClient } from "@/lib/supabase/client";
+import type { Provider } from "@supabase/supabase-js";
 
 export const authApi = {
-  login: (payload: LoginPayload) =>
-    api.post<AuthResponse>("/auth/login", payload, { skipAuth: true }),
+  signUp: (email: string, password: string, name: string) => {
+    const supabase = createClient();
+    return supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+  },
 
-  register: (payload: RegisterPayload) =>
-    api.post<AuthResponse>("/auth/register", payload, { skipAuth: true }),
+  signIn: (email: string, password: string) => {
+    const supabase = createClient();
+    return supabase.auth.signInWithPassword({ email, password });
+  },
 
-  me: () => api.get<User>("/auth/me"),
+  signOut: () => {
+    const supabase = createClient();
+    return supabase.auth.signOut();
+  },
 
-  updateProfile: (payload: { name?: string; avatarUrl?: string | null }) =>
-    api.patch<User>("/auth/me", payload),
+  getUser: async () => {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getUser();
+    return data.user;
+  },
 
-  logout: () => api.post<void>("/auth/logout"),
+  signInWithOAuth: (provider: Provider) => {
+    const supabase = createClient();
+    return supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  },
 
-  oauthProviders: () =>
-    api.get<Record<OAuthProvider, boolean>>("/auth/oauth/providers", {
-      skipAuth: true,
-    }),
-
-  oauthStartUrl: (provider: OAuthProvider) =>
-    `${API_URL}/auth/oauth/${provider}/start`,
+  updateProfile: async (payload: { name?: string; avatarUrl?: string | null }) => {
+    const supabase = createClient();
+    const { data } = await supabase.auth.updateUser({
+      data: {
+        name: payload.name,
+        avatar_url: payload.avatarUrl,
+      },
+    });
+    return data.user;
+  },
 };

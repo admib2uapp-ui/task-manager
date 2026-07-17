@@ -28,6 +28,7 @@ import { useLogout } from "@/features/auth/hooks/use-auth";
 import { useAuthStore } from "@/features/auth/store/auth-store";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { User } from "@/types/domain";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -60,7 +61,16 @@ export function SettingsView() {
         name: values.name,
         avatarUrl: values.avatarUrl || null,
       }),
-    onSuccess: (updated) => {
+    onSuccess: (supabaseUser) => {
+      if (!supabaseUser) return;
+      const updated: User = {
+        id: supabaseUser.id,
+        email: supabaseUser.email ?? user?.email ?? "",
+        name: (supabaseUser.user_metadata?.name as string) ?? supabaseUser.email?.split("@")[0] ?? "",
+        avatarUrl: (supabaseUser.user_metadata?.avatar_url as string) ?? null,
+        createdAt: supabaseUser.created_at ?? new Date().toISOString(),
+        updatedAt: supabaseUser.updated_at ?? new Date().toISOString(),
+      };
       setUser(updated);
       toast.success("Profile updated");
     },
