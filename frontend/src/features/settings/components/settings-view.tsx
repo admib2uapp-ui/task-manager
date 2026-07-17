@@ -53,9 +53,9 @@ export function SettingsView() {
   });
 
   const updateProfile = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (_values: ProfileValues) =>
       // Profile update disabled — auth removed
-    },
+      undefined,
     onSuccess: () => {},
     onError: () => {},
   });
