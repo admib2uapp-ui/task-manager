@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import os
 from typing import Annotated
 
 from pydantic import Field, field_validator
@@ -85,6 +86,18 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() in {"production", "prod"}
+
+    @property
+    def is_vercel(self) -> bool:
+        # Vercel automatically injects `VERCEL=1` in the runtime environment.
+        return os.getenv("VERCEL") == "1"
+
+    @property
+    def effective_upload_dir(self) -> str:
+        # Vercel file system is ephemeral and only writable under /tmp.
+        if self.is_vercel:
+            return "/tmp/uploads"
+        return self.UPLOAD_DIR
 
     @property
     def google_enabled(self) -> bool:

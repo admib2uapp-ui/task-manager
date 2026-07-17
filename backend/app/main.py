@@ -42,8 +42,8 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
-    # Serve uploaded files (local disk storage for development).
-    upload_dir = Path(settings.UPLOAD_DIR)
+    # Serve uploaded files (local dev disk or Vercel ephemeral /tmp storage).
+    upload_dir = Path(settings.effective_upload_dir)
     upload_dir.mkdir(parents=True, exist_ok=True)
     app.mount(
         "/uploads",

@@ -323,7 +323,7 @@ class TaskService:
         task = await self._task_or_404(task_id, workspace_id)
         suffix = Path(file_name).suffix[:20]
         stored_name = f"{uuid.uuid4().hex}{suffix}"
-        upload_dir = Path(settings.UPLOAD_DIR)
+        upload_dir = Path(settings.effective_upload_dir)
         upload_dir.mkdir(parents=True, exist_ok=True)
         (upload_dir / stored_name).write_bytes(content)
 
@@ -350,7 +350,7 @@ class TaskService:
         attachment = next((a for a in task.attachments if a.id == attachment_id), None)
         if attachment is None:
             raise NotFoundError("Attachment not found")
-        stored = Path(settings.UPLOAD_DIR) / attachment.stored_name
+        stored = Path(settings.effective_upload_dir) / attachment.stored_name
         stored.unlink(missing_ok=True)
         task.attachments.remove(attachment)
         await self.session.flush()
