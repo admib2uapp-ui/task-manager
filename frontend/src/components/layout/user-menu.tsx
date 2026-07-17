@@ -11,8 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/features/auth/store/auth-store";
-import { useLogout } from "@/features/auth/hooks/use-auth";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -21,8 +21,14 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ collapsed = false }: UserMenuProps) {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const logout = useLogout();
+  const reset = useAuthStore((s) => s.reset);
+
+  const handleLogout = () => {
+    reset();
+    router.replace("/login");
+  };
 
   const displayName = user?.name ?? "Guest";
   const displayEmail = user?.email ?? "Not signed in";
@@ -72,7 +78,7 @@ export function UserMenu({ collapsed = false }: UserMenuProps) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
+        <DropdownMenuItem variant="destructive" onClick={handleLogout}>
           <LogOut className="size-4" /> Log out
         </DropdownMenuItem>
       </DropdownMenuContent>

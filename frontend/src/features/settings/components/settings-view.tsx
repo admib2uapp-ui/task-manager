@@ -2,11 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2, LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { LogOut, Loader2, Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
@@ -23,12 +22,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authApi } from "@/features/auth/api/auth-api";
-import { useLogout } from "@/features/auth/hooks/use-auth";
 import { useAuthStore } from "@/features/auth/store/auth-store";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { User } from "@/types/domain";
+import { useRouter } from "next/navigation";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -44,8 +41,8 @@ const THEMES = [
 
 export function SettingsView() {
   const user = useAuthStore((s) => s.user);
-  const setUser = useAuthStore((s) => s.setUser);
-  const logout = useLogout();
+  const reset = useAuthStore((s) => s.reset);
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -56,25 +53,11 @@ export function SettingsView() {
   });
 
   const updateProfile = useMutation({
-    mutationFn: (values: ProfileValues) =>
-      authApi.updateProfile({
-        name: values.name,
-        avatarUrl: values.avatarUrl || null,
-      }),
-    onSuccess: (supabaseUser) => {
-      if (!supabaseUser) return;
-      const updated: User = {
-        id: supabaseUser.id,
-        email: supabaseUser.email ?? user?.email ?? "",
-        name: (supabaseUser.user_metadata?.name as string) ?? supabaseUser.email?.split("@")[0] ?? "",
-        avatarUrl: (supabaseUser.user_metadata?.avatar_url as string) ?? null,
-        createdAt: supabaseUser.created_at ?? new Date().toISOString(),
-        updatedAt: supabaseUser.updated_at ?? new Date().toISOString(),
-      };
-      setUser(updated);
-      toast.success("Profile updated");
+    mutationFn: async () => {
+      // Profile update disabled — auth removed
     },
-    onError: () => toast.error("Could not update profile"),
+    onSuccess: () => {},
+    onError: () => {},
   });
 
   return (
@@ -194,7 +177,10 @@ export function SettingsView() {
             <Button
               variant="outline"
               className="text-destructive hover:text-destructive gap-1.5 rounded-xl"
-              onClick={() => logout.mutate()}
+              onClick={() => {
+                reset();
+                router.replace("/login");
+              }}
             >
               <LogOut className="size-4" /> Sign out
             </Button>
