@@ -28,11 +28,26 @@ class ConnectionManager:
             self._connections[workspace_id].discard(websocket)
 
     async def broadcast(self, workspace_id: str, message: dict) -> None:
-        for websocket in list(self._connections.get(workspace_id, ())):
+        sockets = list(self._connections.get(workspace_id, ()))
+        if not sockets:
+            return
+
+        async def _send(websocket: WebSocket) -> None:
             try:
                 await websocket.send_json(message)
             except Exception:  # noqa: BLE001 - drop dead sockets
-                await self.disconnect(workspace_id, websocket)
+                try:
+                    await self.disconnect(workspace_id, websocket)
+                except Exception:  # noqa: BLE001
+                    pass
+
+        results = await asyncio.gather(*[_send(ws) for ws in sockets], return_exceptions=True)
+        for result, ws in zip(results, sockets):
+            if isinstance(result, Exception):
+                try:
+                    await self.disconnect(workspace_id, ws)
+                except Exception:  # noqa: BLE001
+                    pass
 
 
 manager = ConnectionManager()

@@ -54,6 +54,22 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""
 
+    # --- LLM (AI integration) ---
+    LLM_PROVIDER: str = "openai"
+    LLM_API_KEY: str = ""
+    LLM_BASE_URL: str = ""
+    LLM_MODEL: str = "gpt-4o"
+    LLM_MAX_TOKENS: int = 4096
+    LLM_TEMPERATURE: float = 0.3
+
+    # --- Background jobs ---
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    # --- Repository scanning ---
+    REPO_STORAGE_DIR: str = "repo_cache"
+    MAX_SCAN_FILES: int = 50000
+    MAX_FILE_SIZE_BYTES: int = 2 * 1024 * 1024  # 2 MB
+
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def _split_cors(cls, value: object) -> object:

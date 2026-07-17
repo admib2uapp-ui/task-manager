@@ -26,6 +26,11 @@ class TagCreate(CamelModel):
     color: str = Field(default="#3b82f6", pattern=HEX_PATTERN)
 
 
+class TagUpdate(CamelModel):
+    name: str | None = Field(default=None, min_length=1, max_length=50)
+    color: str | None = Field(default=None, pattern=HEX_PATTERN)
+
+
 # ---------------------------- Milestones -----------------------------------
 class MilestoneRead(ORMModel):
     id: uuid.UUID

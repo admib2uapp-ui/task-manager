@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,11 +46,17 @@ export function QuickTaskDialog({
   defaultStatus = "backlog",
 }: QuickTaskDialogProps) {
   const createTask = useCreateTask();
-  const { data: projects = [] } = useProjects();
+  const {
+    data: projects = [],
+    isLoading: projectsLoading,
+    isError: projectsLoadError,
+  } = useProjects({ includeArchived: true });
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedProject, setSelectedProject] = useState(projectId ?? "");
+  const [selectedProject, setSelectedProject] = useState<string | undefined>(
+    projectId,
+  );
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
   const [priority, setPriority] = useState<TaskPriority>("medium");
 
@@ -57,11 +64,17 @@ export function QuickTaskDialog({
     if (open) {
       setTitle("");
       setDescription("");
-      setSelectedProject(projectId ?? projects[0]?.id ?? "");
+      setSelectedProject(projectId);
       setStatus(defaultStatus);
       setPriority("medium");
     }
-  }, [open, projectId, defaultStatus, projects]);
+  }, [open, projectId, defaultStatus]);
+
+  useEffect(() => {
+    if (open && !projectId && !selectedProject && projects.length > 0) {
+      setSelectedProject(String(projects[0].id));
+    }
+  }, [open, projectId, selectedProject, projects]);
 
   async function submit() {
     if (!title.trim() || !selectedProject) return;
@@ -109,13 +122,30 @@ export function QuickTaskDialog({
               <Select
                 value={selectedProject}
                 onValueChange={setSelectedProject}
+                disabled={
+                  projectsLoading || projectsLoadError || projects.length === 0
+                }
               >
                 <SelectTrigger className="h-9 w-full">
-                  <SelectValue placeholder="Select a project" />
+                  <SelectValue
+                    placeholder={
+                      projectsLoading ? "Loading projects..." : "Select a project"
+                    }
+                  />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[60]">
+                  {projectsLoading && (
+                    <SelectItem value="__loading" disabled>
+                      Loading projects...
+                    </SelectItem>
+                  )}
+                  {!projectsLoading && projects.length === 0 && (
+                    <SelectItem value="__none" disabled>
+                      No projects available
+                    </SelectItem>
+                  )}
                   {projects.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
+                    <SelectItem key={p.id} value={String(p.id)}>
                       <span
                         className="mr-1.5 inline-block size-2 rounded-full"
                         style={{ backgroundColor: p.color }}
@@ -125,6 +155,20 @@ export function QuickTaskDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {projectsLoadError && (
+                <p className="text-destructive text-xs">
+                  Could not load projects. Refresh and try again.
+                </p>
+              )}
+              {!projectsLoading && !projectsLoadError && projects.length === 0 && (
+                <p className="text-muted-foreground text-xs">
+                  No projects found. Create one in{" "}
+                  <Link href="/projects" className="underline underline-offset-2">
+                    Projects
+                  </Link>
+                  .
+                </p>
+              )}
             </div>
           )}
 
@@ -138,7 +182,7 @@ export function QuickTaskDialog({
                 <SelectTrigger className="h-9 w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[60]">
                   {KANBAN_COLUMNS.map((s) => (
                     <SelectItem key={s} value={s}>
                       {TASK_STATUS_META[s].label}
@@ -156,7 +200,7 @@ export function QuickTaskDialog({
                 <SelectTrigger className="h-9 w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[60]">
                   {Object.values(TASK_PRIORITY).map((p) => (
                     <SelectItem key={p} value={p}>
                       {TASK_PRIORITY_META[p].label}

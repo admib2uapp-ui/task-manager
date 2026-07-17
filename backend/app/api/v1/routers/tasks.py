@@ -116,7 +116,9 @@ async def add_subtask(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.add_subtask(task_id, workspace.id, payload)
+    result = await service.add_subtask(task_id, workspace.id, payload)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.patch("/{task_id}/subtasks/{subtask_id}", response_model=TaskDetail)
@@ -128,7 +130,9 @@ async def update_subtask(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.update_subtask(task_id, subtask_id, workspace.id, payload)
+    result = await service.update_subtask(task_id, subtask_id, workspace.id, payload)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.delete("/{task_id}/subtasks/{subtask_id}", response_model=TaskDetail)
@@ -139,7 +143,9 @@ async def delete_subtask(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.delete_subtask(task_id, subtask_id, workspace.id)
+    result = await service.delete_subtask(task_id, subtask_id, workspace.id)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 # ------------------------------ checklist ----------------------------------
@@ -155,7 +161,9 @@ async def add_checklist_item(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.add_checklist_item(task_id, workspace.id, payload)
+    result = await service.add_checklist_item(task_id, workspace.id, payload)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.patch("/{task_id}/checklist/{item_id}", response_model=TaskDetail)
@@ -167,7 +175,9 @@ async def update_checklist_item(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.update_checklist_item(task_id, item_id, workspace.id, payload)
+    result = await service.update_checklist_item(task_id, item_id, workspace.id, payload)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.delete("/{task_id}/checklist/{item_id}", response_model=TaskDetail)
@@ -178,7 +188,9 @@ async def delete_checklist_item(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.delete_checklist_item(task_id, item_id, workspace.id)
+    result = await service.delete_checklist_item(task_id, item_id, workspace.id)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 # ------------------------------- comments ----------------------------------
@@ -195,7 +207,9 @@ async def add_comment(
     db: DbSession,
 ) -> CommentRead:
     service = TaskService(db)
-    return await service.add_comment(task_id, workspace.id, current_user.id, payload)
+    result = await service.add_comment(task_id, workspace.id, current_user.id, payload)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.delete("/{task_id}/comments/{comment_id}", response_model=MessageResponse)
@@ -207,6 +221,7 @@ async def delete_comment(
 ) -> MessageResponse:
     service = TaskService(db)
     await service.delete_comment(task_id, comment_id, workspace.id)
+    await publish_invalidate(workspace.id)
     return MessageResponse(message="Comment deleted")
 
 
@@ -223,7 +238,9 @@ async def add_dependency(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.add_dependency(task_id, workspace.id, payload.depends_on_id)
+    result = await service.add_dependency(task_id, workspace.id, payload.depends_on_id)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.delete("/{task_id}/dependencies/{depends_on_id}", response_model=TaskDetail)
@@ -234,7 +251,9 @@ async def remove_dependency(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.remove_dependency(task_id, depends_on_id, workspace.id)
+    result = await service.remove_dependency(task_id, depends_on_id, workspace.id)
+    await publish_invalidate(workspace.id)
+    return result
 
 
 # ----------------------------- attachments ---------------------------------
@@ -251,13 +270,15 @@ async def add_attachment(
 ) -> TaskDetail:
     service = TaskService(db)
     content = await file.read()
-    return await service.add_attachment(
+    result = await service.add_attachment(
         task_id,
         workspace.id,
         file_name=file.filename or "file",
         content=content,
         content_type=file.content_type or "application/octet-stream",
     )
+    await publish_invalidate(workspace.id)
+    return result
 
 
 @router.delete("/{task_id}/attachments/{attachment_id}", response_model=TaskDetail)
@@ -268,4 +289,6 @@ async def delete_attachment(
     db: DbSession,
 ) -> TaskDetail:
     service = TaskService(db)
-    return await service.delete_attachment(task_id, attachment_id, workspace.id)
+    result = await service.delete_attachment(task_id, attachment_id, workspace.id)
+    await publish_invalidate(workspace.id)
+    return result

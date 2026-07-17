@@ -63,7 +63,7 @@ class Task(UUIDMixin, TimestampMixin, Base):
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
-    project: Mapped[Project] = relationship(lazy="selectin")
+    project: Mapped[Project] = relationship(back_populates="tasks", lazy="selectin")
     assignee: Mapped[User | None] = relationship(lazy="selectin")
     tags: Mapped[list[Tag]] = relationship(secondary=task_tags, lazy="selectin")
     subtasks: Mapped[list[Subtask]] = relationship(
@@ -87,6 +87,7 @@ class Task(UUIDMixin, TimestampMixin, Base):
     comments: Mapped[list[Comment]] = relationship(
         back_populates="task",
         cascade="all, delete-orphan",
+        lazy="selectin",
         order_by="Comment.created_at",
     )
     dependencies: Mapped[list[Task]] = relationship(

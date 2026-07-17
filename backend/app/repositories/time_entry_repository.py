@@ -13,8 +13,11 @@ class TimeEntryRepository(BaseRepository[TimeEntry]):
     model = TimeEntry
 
     async def get_running(self, user_id: uuid.UUID) -> TimeEntry | None:
-        stmt = select(TimeEntry).where(
-            TimeEntry.user_id == user_id, TimeEntry.ended_at.is_(None)
+        stmt = (
+            select(TimeEntry)
+            .where(TimeEntry.user_id == user_id, TimeEntry.ended_at.is_(None))
+            .order_by(TimeEntry.started_at.desc())
+            .limit(1)
         )
         return await self.session.scalar(stmt)
 

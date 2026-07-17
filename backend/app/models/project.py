@@ -13,6 +13,8 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 if TYPE_CHECKING:
     from app.models.milestone import Milestone
     from app.models.tag import Tag
+    from app.models.task import Task
+    from app.models.workspace import Workspace
 
 
 class Project(UUIDMixin, TimestampMixin, Base):
@@ -33,6 +35,7 @@ class Project(UUIDMixin, TimestampMixin, Base):
     is_favorite: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    workspace: Mapped[Workspace] = relationship(back_populates="projects")
     tags: Mapped[list[Tag]] = relationship(
         secondary=project_tags,
         lazy="selectin",
@@ -42,4 +45,8 @@ class Project(UUIDMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="Milestone.position",
+    )
+    tasks: Mapped[list[Task]] = relationship(
+        back_populates="project",
+        lazy="selectin",
     )

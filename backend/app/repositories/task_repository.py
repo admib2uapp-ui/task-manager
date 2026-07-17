@@ -33,6 +33,8 @@ class TaskRepository(BaseRepository[Task]):
         assignee_id: uuid.UUID | None = None,
         tag_id: uuid.UUID | None = None,
         search: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[Task]:
         stmt = self._workspace_scoped(workspace_id)
 
@@ -60,6 +62,10 @@ class TaskRepository(BaseRepository[Task]):
             )
 
         stmt = stmt.order_by(Task.position, Task.created_at)
+        if offset is not None:
+            stmt = stmt.offset(offset)
+        if limit is not None:
+            stmt = stmt.limit(limit)
         result = await self.session.scalars(stmt)
         return list(result.unique().all())
 

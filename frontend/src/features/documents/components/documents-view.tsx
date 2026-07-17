@@ -51,8 +51,7 @@ function Editor({ noteId }: { noteId: string }) {
         content: debouncedContent,
       },
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedTitle, debouncedContent]);
+  }, [debouncedTitle, debouncedContent, dirty, note, update]);
 
   if (!note) {
     return (

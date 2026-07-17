@@ -40,6 +40,8 @@ task_tags = Table(
     ),
 )
 
+from sqlalchemy import CheckConstraint
+
 # Self-referential task dependencies (task depends_on another task).
 task_dependencies = Table(
     "task_dependencies",
@@ -56,4 +58,5 @@ task_dependencies = Table(
         ForeignKey("tasks.id", ondelete="CASCADE"),
         primary_key=True,
     ),
+    CheckConstraint("task_id != depends_on_id", name="ck_no_self_dependency"),
 )

@@ -11,6 +11,7 @@ from app.api.v1.routers import (
     notifications,
     oauth,
     projects,
+    repositories,
     search,
     tags,
     tasks,
@@ -22,6 +23,7 @@ api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(oauth.router)
+api_router.include_router(oauth.github_router)
 api_router.include_router(projects.router)
 api_router.include_router(tags.router)
 api_router.include_router(tasks.router)
@@ -31,4 +33,5 @@ api_router.include_router(time_entries.router)
 api_router.include_router(analytics.router)
 api_router.include_router(notes.router)
 api_router.include_router(notifications.router)
+api_router.include_router(repositories.router)
 api_router.include_router(ws.router)

@@ -45,7 +45,7 @@ class NotificationRepository(BaseRepository[Notification]):
         stmt = select(Notification.id).where(
             Notification.user_id == user_id,
             Notification.entity_id == entity_id,
-            Notification.type == type_,
+            Notification.notification_type == type_,
             Notification.created_at >= since,
         )
         return (await self.session.scalar(stmt)) is not None

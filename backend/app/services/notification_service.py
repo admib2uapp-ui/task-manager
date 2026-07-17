@@ -31,7 +31,7 @@ class NotificationService:
     ) -> Notification:
         notification = Notification(
             user_id=user_id,
-            type=type_,
+            notification_type=type_,
             title=title,
             body=body,
             entity_type=entity_type,

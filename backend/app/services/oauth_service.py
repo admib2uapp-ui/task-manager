@@ -27,6 +27,8 @@ PROVIDERS: dict[str, dict[str, str]] = {
     },
 }
 
+GITHUB_CONNECT_SCOPE = "read:user user:email public_repo"
+
 
 class OAuthUserInfo:
     def __init__(self, email: str, name: str | None, avatar_url: str | None):
@@ -155,3 +157,86 @@ async def _fetch_userinfo(provider: str, token: str) -> OAuthUserInfo:
 async def complete_oauth(provider: str, code: str) -> OAuthUserInfo:
     token = await _exchange_code(provider, code)
     return await _fetch_userinfo(provider, token)
+
+
+# ── GitHub Repo Connect (separate from login OAuth) ────────────
+
+
+def _make_connect_state(user_id: str) -> str:
+    payload = {
+        "user_id": user_id,
+        "nonce": secrets.token_urlsafe(16),
+        "type": "github_connect",
+        "exp": datetime.now(UTC) + timedelta(minutes=10),
+    }
+    return jwt.encode(
+        payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+    )
+
+
+def get_user_id_from_connect_state(state: str) -> str:
+    try:
+        payload = jwt.decode(
+            state, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+        )
+    except jwt.PyJWTError as exc:
+        raise BadRequestError("Invalid state") from exc
+    if payload.get("type") != "github_connect":
+        raise BadRequestError("Invalid state type")
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise BadRequestError("Missing user_id in state")
+    return str(user_id)
+
+
+def build_github_connect_url(user_id: str) -> str:
+    if not settings.github_enabled:
+        raise BadRequestError("GitHub OAuth is not configured")
+    meta = PROVIDERS["github"]
+    params = {
+        "client_id": settings.GITHUB_CLIENT_ID,
+        "redirect_uri": _github_connect_redirect_uri(),
+        "scope": GITHUB_CONNECT_SCOPE,
+        "response_type": "code",
+        "state": _make_connect_state(user_id),
+    }
+    return f"{meta['authorize']}?{urlencode(params)}"
+
+
+def _github_connect_redirect_uri() -> str:
+    return (
+        f"{settings.OAUTH_REDIRECT_BASE}{settings.API_V1_PREFIX}"
+        "/auth/github/callback"
+    )
+
+
+async def complete_github_connect(code: str) -> dict[str, str]:
+    if not settings.github_enabled:
+        raise BadRequestError("GitHub OAuth is not configured")
+    client_id, client_secret = (
+        settings.GITHUB_CLIENT_ID,
+        settings.GITHUB_CLIENT_SECRET,
+    )
+    meta = PROVIDERS["github"]
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": _github_connect_redirect_uri(),
+        "grant_type": "authorization_code",
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(
+            meta["token"], data=data, headers={"Accept": "application/json"}
+        )
+        resp.raise_for_status()
+        token = resp.json().get("access_token")
+    if not token:
+        raise BadRequestError("Failed to obtain access token")
+
+    userinfo = await _fetch_userinfo("github", token)
+    return {
+        "access_token": token,
+        "login": userinfo.name or "unknown",
+        "avatar_url": userinfo.avatar_url or "",
+    }

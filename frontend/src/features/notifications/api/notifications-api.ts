@@ -1,7 +1,5 @@
 import { api } from "@/lib/api-client";
-
-export type NotificationType =
-  "deadline" | "overdue" | "comment" | "assigned" | "reminder" | "completed";
+import type { NotificationType } from "@/types/domain";
 
 export interface AppNotification {
   id: string;

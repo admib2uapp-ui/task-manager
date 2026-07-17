@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -23,7 +22,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -127,7 +125,7 @@ export function ProjectFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] gap-0 overflow-hidden p-0 sm:max-w-lg">
+      <DialogContent className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="border-border border-b px-6 py-4">
           <DialogTitle className="flex items-center gap-2.5">
             <span
@@ -147,9 +145,12 @@ export function ProjectFormDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="max-h-[60dvh]">
-              <div className="space-y-5 px-6 py-5">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="space-y-5 px-6 py-5 pb-6">
                 <FormField
                   control={form.control}
                   name="name"
@@ -207,7 +208,7 @@ export function ProjectFormDialog({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="status"
@@ -223,7 +224,7 @@ export function ProjectFormDialog({
                               <SelectValue />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="z-[70]">
                             {Object.values(PROJECT_STATUS_META).map((s) => (
                               <SelectItem key={s.value} value={s.value}>
                                 {s.label}
@@ -279,9 +280,9 @@ export function ProjectFormDialog({
                   />
                 </div>
               </div>
-            </ScrollArea>
+            </div>
 
-            <DialogFooter className="border-border border-t px-6 py-4">
+            <div className="bg-muted/50 border-border flex flex-col-reverse gap-2 border-t px-6 py-4 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="ghost"
@@ -293,7 +294,7 @@ export function ProjectFormDialog({
                 {isPending && <Loader2 className="size-4 animate-spin" />}
                 {isEdit ? "Save changes" : "Create project"}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
       </DialogContent>

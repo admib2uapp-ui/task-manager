@@ -3,12 +3,14 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
+from pydantic import Field
+
 from app.schemas.common import CamelModel, ORMModel
 
 
 class NotificationRead(ORMModel):
     id: uuid.UUID
-    type: str
+    type: str = Field(validation_alias="notification_type")
     title: str
     body: str | None
     entity_type: str | None

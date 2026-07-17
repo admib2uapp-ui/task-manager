@@ -14,10 +14,8 @@ import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type {
-  AppNotification,
-  NotificationType,
-} from "@/features/notifications/api/notifications-api";
+import type { AppNotification } from "@/features/notifications/api/notifications-api";
+import type { NotificationType } from "@/types/domain";
 import {
   useMarkAllRead,
   useMarkRead,
@@ -34,6 +32,7 @@ const META: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   assigned: { icon: UserPlus, color: "#a855f7" },
   reminder: { icon: Bell, color: "#71717a" },
   completed: { icon: CheckCircle2, color: "#22c55e" },
+  mention: { icon: MessageSquare, color: "#06b6d4" },
 };
 
 export function NotificationsView() {

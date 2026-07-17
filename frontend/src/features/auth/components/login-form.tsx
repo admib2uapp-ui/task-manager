@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import { loginSchema, type LoginValues } from "@/features/auth/schemas";
 
 export function LoginForm() {
   const login = useLogin();
+  const searchParams = useSearchParams();
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
@@ -32,11 +34,10 @@ export function LoginForm() {
   }
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("error") === "oauth") {
+    if (searchParams.get("error") === "oauth") {
       toast.error("Social sign-in failed. Please try again.");
     }
-  }, []);
+  }, [searchParams]);
 
   return (
     <>

@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,7 +49,10 @@ export function ManualEntryDialog({
   async function submit() {
     const start = new Date(startedAt);
     const end = new Date(endedAt);
-    if (end <= start) return;
+    if (end <= start) {
+      toast.error("End time must be after start time");
+      return;
+    }
     await create.mutateAsync({
       projectId: projectId === "none" ? null : projectId,
       description: description.trim() || null,

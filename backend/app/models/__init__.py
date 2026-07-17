@@ -10,6 +10,15 @@ from app.models.milestone import Milestone
 from app.models.note import Note
 from app.models.notification import Notification
 from app.models.project import Project
+from app.models.repository import (
+    AIRepositoryReport,
+    CodeIssue,
+    RepositoryChat,
+    RepositoryConnection,
+    RepositoryMetric,
+    RepositoryScan,
+    RepositoryScore,
+)
 from app.models.tag import Tag
 from app.models.task import Task
 from app.models.task_items import ChecklistItem, Subtask
@@ -33,6 +42,13 @@ __all__ = [
     "Note",
     "Notification",
     "Attachment",
+    "RepositoryConnection",
+    "RepositoryScan",
+    "CodeIssue",
+    "RepositoryMetric",
+    "AIRepositoryReport",
+    "RepositoryScore",
+    "RepositoryChat",
     "project_tags",
     "task_tags",
     "task_dependencies",

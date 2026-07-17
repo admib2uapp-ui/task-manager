@@ -38,6 +38,9 @@ def _normalise_database_url(raw_url: str) -> tuple[URL, dict[str, object]]:
             if sslmode == "require":
                 ctx.check_hostname = False
                 ctx.verify_mode = ssl.CERT_NONE
+            elif sslmode == "verify-ca":
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_REQUIRED
             connect_args["ssl"] = ctx
 
     return url, connect_args

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
+    from app.models.project import Project
     from app.models.user import User
 
 
@@ -28,6 +29,9 @@ class Workspace(UUIDMixin, TimestampMixin, Base):
         back_populates="workspace",
         cascade="all, delete-orphan",
     )
+    projects: Mapped[list[Project]] = relationship(
+        back_populates="workspace",
+    )
 
 
 class WorkspaceMember(UUIDMixin, TimestampMixin, Base):
@@ -42,7 +46,7 @@ class WorkspaceMember(UUIDMixin, TimestampMixin, Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    role: Mapped[str] = mapped_column(String(20), default="owner", nullable=False)
+    role: Mapped[str] = mapped_column(String(20), default="member", nullable=False)
 
     workspace: Mapped[Workspace] = relationship(back_populates="members")
     user: Mapped[User] = relationship(back_populates="memberships")
