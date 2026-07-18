@@ -52,8 +52,14 @@ function buildUrl(path: string, params?: RequestOptions["params"]): string {
   return url.toString();
 }
 
-function clearAuthAndRedirect(): void {
+async function clearAuthAndRedirect(): Promise<void> {
   clearAuthSession();
+  try {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Ignore — session may already be gone
+  }
   window.location.href = "/login";
 }
 
@@ -104,7 +110,7 @@ async function request<T>(
 
   if (!response.ok) {
     if (response.status === 401 && !skipAuth && typeof window !== "undefined") {
-      clearAuthAndRedirect();
+      await clearAuthAndRedirect();
     }
 
     const detail =

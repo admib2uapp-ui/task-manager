@@ -180,7 +180,7 @@ function TaskDetailBody({
   );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Header */}
       <div className="border-border flex items-center justify-between gap-2 border-b px-5 py-3">
         <div className="text-muted-foreground flex items-center gap-2 text-xs">
@@ -232,8 +232,8 @@ function TaskDetailBody({
         )}
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="space-y-6 px-5 py-5">
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="space-y-6 px-5 py-5 pb-8">
           {/* Title */}
           <input
             value={title}
