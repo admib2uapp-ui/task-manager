@@ -36,7 +36,8 @@ export function useCreateProject() {
     mutationFn: (payload: ProjectPayload) => projectsApi.create(payload),
     onSuccess: (project) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-      toast.success(`Project “${project.name}” created`);
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success(`Project "${project.name}" created`);
     },
     onError: (error) =>
       toast.error(errorMessage(error, "Could not create project")),

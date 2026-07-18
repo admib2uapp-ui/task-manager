@@ -2,6 +2,27 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getRouteContext, unauthorized } from "@/lib/supabase/route-handler";
 
+function toCamelCase(p: Record<string, unknown>) {
+  return {
+    id: p.id,
+    workspaceId: p.workspace_id,
+    name: p.name,
+    description: p.description,
+    color: p.color,
+    icon: p.icon,
+    status: p.status,
+    deadline: p.deadline,
+    repositoryUrl: p.repository_url,
+    isFavorite: p.is_favorite,
+    isArchived: p.is_archived,
+    createdAt: p.created_at,
+    updatedAt: p.updated_at,
+    tags: ((p.tags as Array<Record<string, unknown>>) || []).map(
+      (t: Record<string, unknown>) => t.tag as Record<string, unknown>,
+    ),
+  };
+}
+
 export async function GET(request: Request) {
   try {
     const { workspace } = await getRouteContext();
@@ -12,14 +33,14 @@ export async function GET(request: Request) {
       .select(
         `
         *,
-        tags:project_tags!inner(tag:tags(*))
+        tags:project_tags(tag:tags(*))
       `,
       )
       .eq("workspace_id", workspace.id)
       .order("created_at", { ascending: false });
 
     const includeArchived = searchParams.get("includeArchived");
-    if (!includeArchived) {
+    if (includeArchived !== "true") {
       query = query.eq("is_archived", false);
     }
 
@@ -33,12 +54,7 @@ export async function GET(request: Request) {
     if (search) query = query.ilike("name", `%${search}%`);
 
     const { data } = await query;
-    const projects = (data || []).map((p: Record<string, unknown>) => ({
-      ...p,
-      tags: ((p.tags as Array<Record<string, unknown>>) || []).map(
-        (t: Record<string, unknown>) => t.tag as Record<string, unknown>,
-      ),
-    }));
+    const projects = (data || []).map(toCamelCase);
 
     return NextResponse.json(projects);
   } catch {

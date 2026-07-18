@@ -41,8 +41,23 @@ export async function GET(
       .eq("status", "done");
 
     return NextResponse.json({
-      ...data,
-      tags: (data.tags || []).map((t: Record<string, unknown>) => t.tag),
+      id: data.id,
+      workspaceId: data.workspace_id,
+      name: data.name,
+      description: data.description,
+      color: data.color,
+      icon: data.icon,
+      status: data.status,
+      deadline: data.deadline,
+      repositoryUrl: data.repository_url,
+      isFavorite: data.is_favorite,
+      isArchived: data.is_archived,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      tags: (data.tags || []).map(
+        (t: Record<string, unknown>) => t.tag as Record<string, unknown>,
+      ),
+      milestones: data.milestones,
       taskCount: taskCount ?? 0,
       completedTaskCount: completedTaskCount ?? 0,
       milestoneCount: (data.milestones as Array<unknown>)?.length ?? 0,
