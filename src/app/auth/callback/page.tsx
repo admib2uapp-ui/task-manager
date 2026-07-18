@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FullScreenLoader } from "@/components/shared/full-screen-loader";
 import { createClient } from "@/lib/supabase/client";
 
-export default function AuthCallbackPage() {
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -70,4 +70,12 @@ export default function AuthCallbackPage() {
   }
 
   return <FullScreenLoader label="Completing sign in…" />;
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<FullScreenLoader label="Completing sign in…" />}>
+      <CallbackContent />
+    </Suspense>
+  );
 }
