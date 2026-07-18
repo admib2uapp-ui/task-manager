@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { KANBAN_COLUMNS } from "@/config/constants";
 import { KanbanColumn } from "@/features/tasks/components/kanban-column";
@@ -58,27 +58,22 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const move = useMoveTask(projectId);
   const pushHistory = useHistoryStore((s) => s.push);
-  const [columns, setColumnsState] = useState<Columns>(() =>
-    groupByStatus(tasks),
-  );
-  const columnsRef = useRef<Columns>(columns);
+
+  const baseColumns = useMemo(() => groupByStatus(tasks), [tasks]);
+  const [dragOverride, setDragOverride] = useState<Columns | null>(null);
+  const columnsRef = useRef<Columns>(baseColumns);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [collapsed, setCollapsed] = useState<Set<TaskStatus>>(new Set());
   const draggingRef = useRef(false);
+  const pendingMoveRef = useRef(false);
 
-  const setColumns = useCallback((updater: (prev: Columns) => Columns) => {
-    setColumnsState((prev) => {
-      const next = updater(prev);
-      columnsRef.current = next;
-      return next;
-    });
-  }, []);
+  const columns = dragOverride ?? baseColumns;
+  columnsRef.current = columns;
 
   useEffect(() => {
-    if (!draggingRef.current) {
-      const grouped = groupByStatus(tasks);
-      columnsRef.current = grouped;
-      setColumnsState(grouped);
+    if (pendingMoveRef.current) {
+      pendingMoveRef.current = false;
+      setDragOverride(null);
     }
   }, [tasks]);
 
@@ -101,6 +96,7 @@ export function KanbanBoard({
     const id = String(event.active.id);
     const container = findContainer(id);
     if (container) {
+      setDragOverride(groupByStatus(tasks));
       setActiveTask(
         columnsRef.current[container].find((t) => t.id === id) ?? null,
       );
@@ -116,16 +112,17 @@ export function KanbanBoard({
     const to = findContainer(overId);
     if (!from || !to || from === to) return;
 
-    setColumns((prev) => {
-      const fromItems = [...prev[from]];
-      const toItems = [...prev[to]];
+    setDragOverride((prev) => {
+      const current = prev ?? columnsRef.current;
+      const fromItems = [...current[from]];
+      const toItems = [...current[to]];
       const activeIndex = fromItems.findIndex((t) => t.id === activeId);
       if (activeIndex === -1) return prev;
       const [moved] = fromItems.splice(activeIndex, 1);
       let overIndex = toItems.findIndex((t) => t.id === overId);
       if (overIndex === -1) overIndex = toItems.length;
       toItems.splice(overIndex, 0, { ...moved, status: to });
-      return { ...prev, [from]: fromItems, [to]: toItems };
+      return { ...current, [from]: fromItems, [to]: toItems };
     });
   }
 
@@ -134,11 +131,18 @@ export function KanbanBoard({
     const original = activeTask;
     draggingRef.current = false;
     setActiveTask(null);
-    if (!over) return;
+
+    if (!over) {
+      setDragOverride(null);
+      return;
+    }
 
     const activeId = String(active.id);
     const container = findContainer(activeId);
-    if (!container) return;
+    if (!container) {
+      setDragOverride(null);
+      return;
+    }
 
     const items = [...columnsRef.current[container]];
     const oldIndex = items.findIndex((t) => t.id === activeId);
@@ -151,10 +155,14 @@ export function KanbanBoard({
         ? arrayMove(items, oldIndex, newIndex)
         : items;
 
-    setColumns((prev) => ({ ...prev, [container]: reordered }));
+    setDragOverride((prev) => {
+      if (!prev) return null;
+      return { ...prev, [container]: reordered };
+    });
 
     const finalIndex = reordered.findIndex((t) => t.id === activeId);
     const position = computePosition(reordered, finalIndex);
+    pendingMoveRef.current = true;
     move.mutate({ id: activeId, status: container, position });
 
     if (
