@@ -19,14 +19,14 @@ export async function POST(
 
     const { data: existing } = await supabaseAdmin
       .from("tasks")
-      .select("created_by")
+      .select("created_by, assignee_id")
       .eq("id", taskId)
       .single();
 
     if (!existing) return notFound("Task");
 
     const ownershipError = await requireOwnership(
-      existing.created_by, user.id, workspace.id,
+      existing.created_by, user.id, workspace.id, existing.assignee_id,
     );
     if (ownershipError) return ownershipError;
 

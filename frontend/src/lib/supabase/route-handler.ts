@@ -32,8 +32,10 @@ export async function requireOwnership(
   createdBy: string | null | undefined,
   userId: string,
   workspaceId: string,
+  assigneeId?: string | null,
 ): Promise<NextResponse | null> {
   if (createdBy === userId) return null;
+  if (assigneeId !== undefined && assigneeId === userId) return null;
 
   const { data: membership } = await supabaseAdmin
     .from("workspace_members")
@@ -91,10 +93,22 @@ async function ensureWorkspace(userId: string): Promise<Workspace> {
     if (ws) return ws;
   }
 
-  const slug = `workspace-${userId.slice(0, 8)}`;
+  const { data: existing } = await supabaseAdmin
+    .from("workspaces")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    await supabaseAdmin
+      .from("workspace_members")
+      .insert({ workspace_id: existing.id, user_id: userId, role: "member" });
+    return existing;
+  }
+
   const { data: newWs } = await supabaseAdmin
     .from("workspaces")
-    .insert({ name: "My Workspace", slug, owner_id: userId })
+    .insert({ name: "Team Workspace", slug: "team", owner_id: userId })
     .select()
     .single();
 
