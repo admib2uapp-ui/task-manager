@@ -10,10 +10,10 @@ export interface AuthResponse {
 
 export const authApi = {
   login: (email: string, password: string) =>
-    api.post<AuthResponse>("/auth/login", { email, password }),
+    api.post<AuthResponse>("/auth/login", { email, password }, { skipAuth: true }),
 
   register: (name: string, email: string, password: string) =>
-    api.post<AuthResponse>("/auth/register", { name, email, password }),
+    api.post<AuthResponse>("/auth/register", { name, email, password }, { skipAuth: true }),
 
   syncUser: () => api.post<User>("/auth/sync"),
 

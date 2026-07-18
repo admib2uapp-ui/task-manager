@@ -42,6 +42,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isError) {
+      setHasSession(false);
       reset();
       router.replace("/login");
     }
