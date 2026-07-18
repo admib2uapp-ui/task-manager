@@ -1,5 +1,6 @@
 import { API_URL } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
+import { clearAuthSession } from "@/features/auth/lib/auth-session";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -51,12 +52,18 @@ function buildUrl(path: string, params?: RequestOptions["params"]): string {
   return url.toString();
 }
 
+function clearAuthAndRedirect(): void {
+  clearAuthSession();
+  window.location.href = "/login";
+}
+
 async function request<T>(
   method: string,
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { body, params, headers, ...init } = options;
+
+  const { body, params, headers, skipAuth, ...init } = options;
 
   const finalHeaders = new Headers(headers);
 
@@ -96,6 +103,10 @@ async function request<T>(
     : await response.text();
 
   if (!response.ok) {
+    if (response.status === 401 && !skipAuth && typeof window !== "undefined") {
+      clearAuthAndRedirect();
+    }
+
     const detail =
       (payload && typeof payload === "object" && "detail" in payload
         ? (payload as { detail: unknown }).detail
