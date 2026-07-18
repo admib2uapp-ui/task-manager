@@ -74,6 +74,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 async def auth_client(client: AsyncClient) -> AsyncClient:
     """Client pre-authenticated as a freshly registered user."""
     from app.core.security import create_access_token as _create_token
+    from app.services.workspace_service import WorkspaceService
 
     async with _testing_session() as session:  # type: ignore[arg-type]
         user = await UserRepository(session).create(
@@ -81,8 +82,7 @@ async def auth_client(client: AsyncClient) -> AsyncClient:
             email="grace@example.com",
             hashed_password="supersecret123",
         )
-        w = Workspace(name="Default", slug="default", owner_id=user.id)
-        session.add(w)
+        await WorkspaceService(session).join_company(user)
         await session.commit()
         token = _create_token(str(user.id))
 
@@ -94,6 +94,7 @@ async def auth_client(client: AsyncClient) -> AsyncClient:
 async def create_user(client: AsyncClient) -> str:
     """Return a helper that creates a user in the test DB and returns a Bearer token."""
     from app.core.security import create_access_token as _create_token
+    from app.services.workspace_service import WorkspaceService
 
     async def _make(name: str, email: str) -> str:
         async with _testing_session() as session:
@@ -102,11 +103,7 @@ async def create_user(client: AsyncClient) -> str:
                 email=email,
                 hashed_password="password123",
             )
-            slug = email.split("@")[0]
-            w = Workspace(
-                name=f"{name}'s Workspace", slug=slug, owner_id=user.id
-            )
-            session.add(w)
+            await WorkspaceService(session).join_company(user)
             await session.commit()
             return _create_token(str(user.id))
 

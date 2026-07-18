@@ -8,10 +8,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.exceptions import UnauthorizedError
+from app.core.exceptions import NotFoundError, UnauthorizedError
 from app.core.security import verify_supabase_token
 from app.models.user import User
-from app.models.workspace import Workspace
+from app.models.workspace import Workspace, WorkspaceMember
 from app.services.auth_service import AuthService
 from app.services.workspace_service import WorkspaceService
 
@@ -59,3 +59,22 @@ async def get_current_workspace(db: DbSession, current_user: CurrentUser) -> Wor
 
 
 CurrentWorkspace = Annotated[Workspace, Depends(get_current_workspace)]
+
+
+async def get_current_workspace_member(
+    db: DbSession,
+    current_user: CurrentUser,
+    workspace: CurrentWorkspace,
+) -> WorkspaceMember:
+    from sqlalchemy import select
+    stmt = select(WorkspaceMember).where(
+        WorkspaceMember.workspace_id == workspace.id,
+        WorkspaceMember.user_id == current_user.id,
+    )
+    member = await db.scalar(stmt)
+    if member is None:
+        raise NotFoundError("You are not a member of this workspace")
+    return member
+
+
+CurrentUserRole = Annotated[WorkspaceMember, Depends(get_current_workspace_member)]

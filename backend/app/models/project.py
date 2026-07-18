@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.milestone import Milestone
     from app.models.tag import Tag
     from app.models.task import Task
+    from app.models.user import User
     from app.models.workspace import Workspace
 
 
@@ -34,8 +35,20 @@ class Project(UUIDMixin, TimestampMixin, Base):
     repository_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     is_favorite: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     workspace: Mapped[Workspace] = relationship(back_populates="projects")
+    creator: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[created_by]
+    )
+    updater: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[updated_by]
+    )
     tags: Mapped[list[Tag]] = relationship(
         secondary=project_tags,
         lazy="selectin",

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import BadRequestError, NotFoundError
+from app.core.permissions import check_owner_or_admin
 from app.models.attachment import Attachment
 from app.models.task import Task
 from app.models.task_items import ChecklistItem, Subtask
@@ -26,6 +27,7 @@ from app.schemas.task import (
     TaskRead,
     TaskUpdate,
 )
+from app.services.audit_service import AuditService
 
 
 class TaskService:
@@ -88,7 +90,9 @@ class TaskService:
         task = await self._detail_or_404(task_id, workspace_id)
         return self.to_detail(task)
 
-    async def create(self, workspace_id: uuid.UUID, data: TaskCreate) -> TaskDetail:
+    async def create(
+        self, workspace_id: uuid.UUID, data: TaskCreate, *, current_user_id: uuid.UUID
+    ) -> TaskDetail:
         project = await self.projects.get_in_workspace(data.project_id, workspace_id)
         if project is None:
             raise BadRequestError("Project not found in workspace")
@@ -111,9 +115,16 @@ class TaskService:
             github_pr_url=data.github_pr_url,
             github_branch=data.github_branch,
             tags=tags,
+            created_by=current_user_id,
         )
         self.session.add(task)
         await self.session.flush()
+        await AuditService(self.session).log(
+            user_id=current_user_id,
+            action="CREATE_TASK",
+            entity_type="Task",
+            entity_id=task.id,
+        )
         return await self.get_detail(task.id, workspace_id)
 
     async def update(
@@ -121,8 +132,12 @@ class TaskService:
         task_id: uuid.UUID,
         workspace_id: uuid.UUID,
         data: TaskUpdate,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         payload = data.model_dump(exclude_unset=True)
 
         if "tag_ids" in payload:
@@ -132,29 +147,63 @@ class TaskService:
         for field, value in payload.items():
             setattr(task, field, value)
 
+        task.updated_by = current_user_id
         await self.session.flush()
+        await AuditService(self.session).log(
+            user_id=current_user_id,
+            action="UPDATE_TASK",
+            entity_type="Task",
+            entity_id=task_id,
+            details={"changes": list(payload.keys())},
+        )
         return await self.get_detail(task_id, workspace_id)
 
     async def move(
-        self, task_id: uuid.UUID, workspace_id: uuid.UUID, data: TaskMove
+        self,
+        task_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+        data: TaskMove,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskRead:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         task.status = data.status
         task.position = data.position
+        task.updated_by = current_user_id
         await self.session.flush()
         refreshed = await self._task_or_404(task_id, workspace_id)
         return self.to_read(refreshed)
 
-    async def delete(self, task_id: uuid.UUID, workspace_id: uuid.UUID) -> None:
+    async def delete(
+        self, task_id: uuid.UUID, workspace_id: uuid.UUID,
+        *, current_user_id: uuid.UUID,
+        member_role: str | None = None,
+    ) -> None:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
+        await AuditService(self.session).log(
+            user_id=current_user_id,
+            action="DELETE_TASK",
+            entity_type="Task",
+            entity_id=task_id,
+        )
         await self.session.delete(task)
         await self.session.flush()
 
     # ------------------------------ subtasks ----------------------------
     async def add_subtask(
-        self, task_id: uuid.UUID, workspace_id: uuid.UUID, data: SubtaskCreate
+        self,
+        task_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+        data: SubtaskCreate,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         position = (len(task.subtasks) + 1) * 1024.0
         task.subtasks.append(
             Subtask(task_id=task.id, title=data.title, position=position)
@@ -168,8 +217,12 @@ class TaskService:
         subtask_id: uuid.UUID,
         workspace_id: uuid.UUID,
         data: SubtaskUpdate,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         subtask = next((s for s in task.subtasks if s.id == subtask_id), None)
         if subtask is None:
             raise NotFoundError("Subtask not found")
@@ -183,8 +236,12 @@ class TaskService:
         task_id: uuid.UUID,
         subtask_id: uuid.UUID,
         workspace_id: uuid.UUID,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         subtask = next((s for s in task.subtasks if s.id == subtask_id), None)
         if subtask is None:
             raise NotFoundError("Subtask not found")
@@ -198,8 +255,12 @@ class TaskService:
         task_id: uuid.UUID,
         workspace_id: uuid.UUID,
         data: ChecklistItemCreate,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         position = (len(task.checklist_items) + 1) * 1024.0
         task.checklist_items.append(
             ChecklistItem(task_id=task.id, content=data.content, position=position)
@@ -213,8 +274,12 @@ class TaskService:
         item_id: uuid.UUID,
         workspace_id: uuid.UUID,
         data: ChecklistItemUpdate,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         item = next((c for c in task.checklist_items if c.id == item_id), None)
         if item is None:
             raise NotFoundError("Checklist item not found")
@@ -228,8 +293,12 @@ class TaskService:
         task_id: uuid.UUID,
         item_id: uuid.UUID,
         workspace_id: uuid.UUID,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         item = next((c for c in task.checklist_items if c.id == item_id), None)
         if item is None:
             raise NotFoundError("Checklist item not found")
@@ -272,8 +341,12 @@ class TaskService:
         task_id: uuid.UUID,
         comment_id: uuid.UUID,
         workspace_id: uuid.UUID,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> None:
         task = await self._detail_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         comment = next((c for c in task.comments if c.id == comment_id), None)
         if comment is None:
             raise NotFoundError("Comment not found")
@@ -286,10 +359,14 @@ class TaskService:
         task_id: uuid.UUID,
         workspace_id: uuid.UUID,
         depends_on_id: uuid.UUID,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         if task_id == depends_on_id:
             raise BadRequestError("A task cannot depend on itself")
         task = await self._detail_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         dependency = await self._task_or_404(depends_on_id, workspace_id)
         if dependency.id not in {d.id for d in task.dependencies}:
             task.dependencies.append(dependency)
@@ -301,8 +378,12 @@ class TaskService:
         task_id: uuid.UUID,
         depends_on_id: uuid.UUID,
         workspace_id: uuid.UUID,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._detail_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         task.dependencies = [d for d in task.dependencies if d.id != depends_on_id]
         await self.session.flush()
         return await self.get_detail(task_id, workspace_id)
@@ -316,11 +397,14 @@ class TaskService:
         file_name: str,
         content: bytes,
         content_type: str,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         if len(content) > settings.MAX_UPLOAD_BYTES:
             raise BadRequestError("File exceeds the maximum allowed size")
 
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         suffix = Path(file_name).suffix[:20]
         stored_name = f"{uuid.uuid4().hex}{suffix}"
         upload_dir = Path(settings.effective_upload_dir)
@@ -335,6 +419,7 @@ class TaskService:
                 file_url=f"/uploads/{stored_name}",
                 mime_type=(content_type or "application/octet-stream")[:120],
                 size_bytes=len(content),
+                created_by=current_user_id,
             )
         )
         await self.session.flush()
@@ -345,8 +430,12 @@ class TaskService:
         task_id: uuid.UUID,
         attachment_id: uuid.UUID,
         workspace_id: uuid.UUID,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> TaskDetail:
         task = await self._task_or_404(task_id, workspace_id)
+        check_owner_or_admin(task, current_user_id, member_role, label="task")
         attachment = next((a for a in task.attachments if a.id == attachment_id), None)
         if attachment is None:
             raise NotFoundError("Attachment not found")

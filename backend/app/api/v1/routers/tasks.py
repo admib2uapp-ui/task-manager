@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, File, Query, UploadFile, status
 
-from app.core.deps import CurrentUser, CurrentWorkspace, DbSession
+from app.core.deps import CurrentUser, CurrentUserRole, CurrentWorkspace, DbSession
 from app.core.ws_manager import publish_invalidate
 from app.schemas.common import MessageResponse
 from app.schemas.task import (
@@ -51,10 +51,14 @@ async def list_tasks(
 
 @router.post("", response_model=TaskDetail, status_code=status.HTTP_201_CREATED)
 async def create_task(
-    payload: TaskCreate, workspace: CurrentWorkspace, db: DbSession
+    payload: TaskCreate,
+    workspace: CurrentWorkspace,
+    db: DbSession,
+    current_user: CurrentUser,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.create(workspace.id, payload)
+    uid = current_user.id
+    result = await service.create(workspace.id, payload, current_user_id=uid)
     await publish_invalidate(workspace.id)
     return result
 
@@ -73,9 +77,15 @@ async def update_task(
     payload: TaskUpdate,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.update(task_id, workspace.id, payload)
+    uid = current_user.id
+    result = await service.update(
+        task_id, workspace.id, payload, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -86,19 +96,32 @@ async def move_task(
     payload: TaskMove,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskRead:
     service = TaskService(db)
-    result = await service.move(task_id, workspace.id, payload)
+    uid = current_user.id
+    result = await service.move(
+        task_id, workspace.id, payload, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
 
 @router.delete("/{task_id}", response_model=MessageResponse)
 async def delete_task(
-    task_id: uuid.UUID, workspace: CurrentWorkspace, db: DbSession
+    task_id: uuid.UUID,
+    workspace: CurrentWorkspace,
+    db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> MessageResponse:
     service = TaskService(db)
-    await service.delete(task_id, workspace.id)
+    await service.delete(
+        task_id, workspace.id, current_user_id=current_user.id,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return MessageResponse(message="Task deleted")
 
@@ -114,9 +137,15 @@ async def add_subtask(
     payload: SubtaskCreate,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.add_subtask(task_id, workspace.id, payload)
+    uid = current_user.id
+    result = await service.add_subtask(
+        task_id, workspace.id, payload, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -128,9 +157,15 @@ async def update_subtask(
     payload: SubtaskUpdate,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.update_subtask(task_id, subtask_id, workspace.id, payload)
+    uid = current_user.id
+    result = await service.update_subtask(
+        task_id, subtask_id, workspace.id, payload, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -141,9 +176,15 @@ async def delete_subtask(
     subtask_id: uuid.UUID,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.delete_subtask(task_id, subtask_id, workspace.id)
+    uid = current_user.id
+    result = await service.delete_subtask(
+        task_id, subtask_id, workspace.id, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -159,9 +200,15 @@ async def add_checklist_item(
     payload: ChecklistItemCreate,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.add_checklist_item(task_id, workspace.id, payload)
+    uid = current_user.id
+    result = await service.add_checklist_item(
+        task_id, workspace.id, payload, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -173,9 +220,15 @@ async def update_checklist_item(
     payload: ChecklistItemUpdate,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.update_checklist_item(task_id, item_id, workspace.id, payload)
+    uid = current_user.id
+    result = await service.update_checklist_item(
+        task_id, item_id, workspace.id, payload, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -186,9 +239,15 @@ async def delete_checklist_item(
     item_id: uuid.UUID,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.delete_checklist_item(task_id, item_id, workspace.id)
+    uid = current_user.id
+    result = await service.delete_checklist_item(
+        task_id, item_id, workspace.id, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -218,9 +277,15 @@ async def delete_comment(
     comment_id: uuid.UUID,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> MessageResponse:
     service = TaskService(db)
-    await service.delete_comment(task_id, comment_id, workspace.id)
+    uid = current_user.id
+    await service.delete_comment(
+        task_id, comment_id, workspace.id, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return MessageResponse(message="Comment deleted")
 
@@ -236,9 +301,15 @@ async def add_dependency(
     payload: DependencyCreate,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.add_dependency(task_id, workspace.id, payload.depends_on_id)
+    uid = current_user.id
+    result = await service.add_dependency(
+        task_id, workspace.id, payload.depends_on_id, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -249,9 +320,15 @@ async def remove_dependency(
     depends_on_id: uuid.UUID,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.remove_dependency(task_id, depends_on_id, workspace.id)
+    uid = current_user.id
+    result = await service.remove_dependency(
+        task_id, depends_on_id, workspace.id, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result
 
@@ -266,6 +343,8 @@ async def add_attachment(
     task_id: uuid.UUID,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
     file: UploadFile = File(...),
 ) -> TaskDetail:
     service = TaskService(db)
@@ -276,6 +355,8 @@ async def add_attachment(
         file_name=file.filename or "file",
         content=content,
         content_type=file.content_type or "application/octet-stream",
+        current_user_id=current_user.id,
+        member_role=current_member.role,
     )
     await publish_invalidate(workspace.id)
     return result
@@ -287,8 +368,14 @@ async def delete_attachment(
     attachment_id: uuid.UUID,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> TaskDetail:
     service = TaskService(db)
-    result = await service.delete_attachment(task_id, attachment_id, workspace.id)
+    uid = current_user.id
+    result = await service.delete_attachment(
+        task_id, attachment_id, workspace.id, current_user_id=uid,
+        member_role=current_member.role,
+    )
     await publish_invalidate(workspace.id)
     return result

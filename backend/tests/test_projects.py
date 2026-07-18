@@ -121,9 +121,9 @@ async def test_project_workspace_isolation(
 ) -> None:
     project = (await auth_client.post(PROJECTS, json={"name": "Private"})).json()
 
-    # Register a second user and swap the auth header.
+    # All users share the Company workspace, so the project is visible
     other_token = await create_user("Alan Turing", "alan@example.com")
     client.headers.update({"Authorization": f"Bearer {other_token}"})
 
     response = await client.get(f"{PROJECTS}/{project['id']}")
-    assert response.status_code == 404
+    assert response.status_code == 200

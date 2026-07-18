@@ -59,7 +59,7 @@ class AuthService:
             hashed_password=hash_password(secrets.token_urlsafe(32)),
             supabase_id=supabase_id,
         )
-        await self.workspaces.create_for_user(user)
+        await self.workspaces.join_company(user)
         return user
 
     async def login(self, *, email: str, password: str) -> User:
@@ -94,7 +94,7 @@ class AuthService:
             email=email_lower,
             hashed_password=hash_password(password),
         )
-        await self.workspaces.create_for_user(user)
+        await self.workspaces.join_company(user)
         return user
 
     async def _load_user(self, subject: str | None) -> User:

@@ -61,10 +61,24 @@ class Task(UUIDMixin, TimestampMixin, Base):
     github_branch: Mapped[str | None] = mapped_column(String(255))
 
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     # Relationships
     project: Mapped[Project] = relationship(back_populates="tasks", lazy="selectin")
-    assignee: Mapped[User | None] = relationship(lazy="selectin")
+    assignee: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[assignee_id]
+    )
+    creator: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[created_by]
+    )
+    updater: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[updated_by]
+    )
     tags: Mapped[list[Tag]] = relationship(secondary=task_tags, lazy="selectin")
     subtasks: Mapped[list[Subtask]] = relationship(
         back_populates="task",

@@ -27,6 +27,7 @@ import {
   useProject,
   useUpdateProject,
 } from "@/features/projects/hooks/use-projects";
+import { useAuthStore } from "@/features/auth/store/auth-store";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,8 @@ function DetailRow({
 export function ProjectDetailView({ projectId }: { projectId: string }) {
   const { data: project, isLoading, isError } = useProject(projectId);
   const update = useUpdateProject();
+  const currentUser = useAuthStore((s) => s.user);
+  const isOwner = currentUser?.id === project?.createdBy;
   const [editOpen, setEditOpen] = useState(false);
 
   if (isLoading) {
@@ -159,13 +162,15 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               )}
             />
           </Button>
-          <Button
-            className="gap-1.5 rounded-xl"
-            variant="outline"
-            onClick={() => setEditOpen(true)}
-          >
-            <Pencil className="size-4" /> Edit
-          </Button>
+          {isOwner && (
+            <Button
+              className="gap-1.5 rounded-xl"
+              variant="outline"
+              onClick={() => setEditOpen(true)}
+            >
+              <Pencil className="size-4" /> Edit
+            </Button>
+          )}
         </div>
       </div>
 
@@ -242,6 +247,11 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                 </DetailRow>
                 <DetailRow label="Created">
                   {formatDate(project.createdAt)}
+                  {project.creator && (
+                    <span className="text-muted-foreground text-xs ml-1">
+                      by {project.creator.name}
+                    </span>
+                  )}
                 </DetailRow>
               </CardContent>
             </Card>

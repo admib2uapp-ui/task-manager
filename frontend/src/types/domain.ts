@@ -92,6 +92,8 @@ export interface Milestone {
   dueDate: ISODateString | null;
   completed: boolean;
   position: number;
+  createdBy?: ID | null;
+  updatedBy?: ID | null;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }
@@ -115,6 +117,10 @@ export interface Project {
   completedMilestoneCount?: number;
   taskCount?: number;
   completedTaskCount?: number;
+  createdBy?: ID | null;
+  creator?: User | null;
+  updatedBy?: ID | null;
+  updater?: User | null;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }
@@ -152,6 +158,8 @@ export interface Attachment {
   fileUrl: string;
   mimeType: string;
   sizeBytes: number;
+  createdBy?: ID | null;
+  updatedBy?: ID | null;
   createdAt: ISODateString;
 }
 
@@ -169,6 +177,10 @@ export interface Task {
   deadline: ISODateString | null;
   estimatedHours: number | null;
   timeSpentSeconds: number;
+  createdBy?: ID | null;
+  creator?: User | null;
+  updatedBy?: ID | null;
+  updater?: User | null;
   tags: Tag[];
   subtasks?: Subtask[];
   checklist?: ChecklistItem[];
@@ -203,6 +215,10 @@ export interface Note {
   projectId: ID | null;
   title: string;
   content: string;
+  createdBy?: ID | null;
+  creator?: User | null;
+  updatedBy?: ID | null;
+  updater?: User | null;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }

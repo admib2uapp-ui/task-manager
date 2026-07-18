@@ -10,6 +10,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.models.user import User
 
 
 class Attachment(UUIDMixin, TimestampMixin, Base):
@@ -23,5 +24,17 @@ class Attachment(UUIDMixin, TimestampMixin, Base):
     file_url: Mapped[str] = mapped_column(String(1024), nullable=False)
     mime_type: Mapped[str] = mapped_column(String(120), nullable=False)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     task: Mapped[Task] = relationship(back_populates="attachments")
+    creator: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[created_by]
+    )
+    updater: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[updated_by]
+    )
