@@ -1,6 +1,14 @@
 import { API_URL } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
 import { clearAuthSession } from "@/features/auth/lib/auth-session";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+let browserClient: SupabaseClient | null = null;
+
+function getBrowserClient(): SupabaseClient {
+  if (!browserClient) browserClient = createClient();
+  return browserClient;
+}
 
 export class ApiError extends Error {
   readonly status: number;
@@ -55,8 +63,7 @@ function buildUrl(path: string, params?: RequestOptions["params"]): string {
 async function clearAuthAndRedirect(): Promise<void> {
   clearAuthSession();
   try {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await getBrowserClient().auth.signOut();
   } catch {
     // Ignore — session may already be gone
   }
@@ -74,8 +81,7 @@ async function request<T>(
   const finalHeaders = new Headers(headers);
 
   if (typeof window !== "undefined") {
-    const supabase = createClient();
-    const { data } = await supabase.auth.getSession();
+    const { data } = await getBrowserClient().auth.getSession();
     const token = data.session?.access_token;
     if (token) {
       finalHeaders.set("Authorization", `Bearer ${token}`);
