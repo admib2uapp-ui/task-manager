@@ -45,6 +45,7 @@ function computePosition(items: Task[], index: number): number {
 
 interface KanbanBoardProps {
   projectId: string;
+  projectColor?: string;
   tasks: Task[];
   onOpenTask: (task: Task) => void;
   onAddTask: (status: TaskStatus) => void;
@@ -52,6 +53,7 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({
   projectId,
+  projectColor,
   tasks,
   onOpenTask,
   onAddTask,
@@ -207,6 +209,7 @@ export function KanbanBoard({
           <KanbanColumn
             key={status}
             status={status}
+            accentColor={projectColor}
             tasks={columns[status]}
             collapsed={collapsed.has(status)}
             onToggleCollapse={() => toggleCollapse(status)}
@@ -219,7 +222,7 @@ export function KanbanBoard({
       <DragOverlay>
         {activeTask ? (
           <div className="w-72">
-            <TaskCard task={activeTask} dragging />
+            <TaskCard task={activeTask} accentColor={projectColor} dragging />
           </div>
         ) : null}
       </DragOverlay>

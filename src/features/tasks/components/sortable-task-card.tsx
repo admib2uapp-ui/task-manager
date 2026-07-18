@@ -9,6 +9,7 @@ import type { Task } from "@/types/domain";
 interface SortableTaskCardProps {
   task: Task;
   onClick: () => void;
+  accentColor?: string;
   density?: "default" | "compact" | "tight";
   fillHeight?: boolean;
 }
@@ -16,6 +17,7 @@ interface SortableTaskCardProps {
 export function SortableTaskCard({
   task,
   onClick,
+  accentColor,
   density,
   fillHeight,
 }: SortableTaskCardProps) {
@@ -38,6 +40,7 @@ export function SortableTaskCard({
     >
       <TaskCard
         task={task}
+        accentColor={accentColor}
         density={density}
         fillHeight={fillHeight}
         onClick={onClick}
