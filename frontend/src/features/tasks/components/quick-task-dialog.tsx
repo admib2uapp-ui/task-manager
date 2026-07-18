@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,6 +30,7 @@ import {
 } from "@/config/constants";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useCreateTask } from "@/features/tasks/hooks/use-tasks";
+import { useWorkspaceMembers } from "@/features/users/hooks/use-users";
 import { TASK_PRIORITY } from "@/types/domain";
 import type { TaskPriority, TaskStatus } from "@/types/domain";
 
@@ -51,6 +53,7 @@ export function QuickTaskDialog({
     isLoading: projectsLoading,
     isError: projectsLoadError,
   } = useProjects({ includeArchived: true });
+  const { data: members = [] } = useWorkspaceMembers();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -59,6 +62,7 @@ export function QuickTaskDialog({
   );
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
   const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [selectedAssignee, setSelectedAssignee] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -67,6 +71,7 @@ export function QuickTaskDialog({
       setSelectedProject(projectId);
       setStatus(defaultStatus);
       setPriority("medium");
+      setSelectedAssignee("");
     }
   }, [open, projectId, defaultStatus]);
 
@@ -84,6 +89,7 @@ export function QuickTaskDialog({
       description: description.trim() || null,
       status,
       priority,
+      assigneeId: selectedAssignee || null,
     });
     onOpenChange(false);
   }
@@ -216,6 +222,36 @@ export function QuickTaskDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-muted-foreground text-xs">Assignee</Label>
+            <Select
+              value={selectedAssignee}
+              onValueChange={(v) =>
+                setSelectedAssignee(v === "__unassigned" ? "" : v)
+              }
+            >
+              <SelectTrigger className="h-9 w-full">
+                <SelectValue placeholder="Unassigned" />
+              </SelectTrigger>
+              <SelectContent className="z-[60]">
+                <SelectItem value="__unassigned">Unassigned</SelectItem>
+                {members.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    <span className="flex items-center gap-2">
+                      <Avatar className="size-5">
+                        <AvatarImage src={m.avatarUrl ?? undefined} />
+                        <AvatarFallback className="text-[10px]">
+                          {m.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {m.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
