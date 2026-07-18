@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ interface StatCardProps {
   /** accent color for the icon chip (hex) */
   accent?: string;
   className?: string;
+  href?: string;
 }
 
 export function StatCard({
@@ -19,8 +21,9 @@ export function StatCard({
   hint,
   accent = "#3b82f6",
   className,
+  href,
 }: StatCardProps) {
-  return (
+  const content = (
     <Card
       className={cn("border-border bg-card shadow-soft rounded-2xl", className)}
     >
@@ -44,4 +47,14 @@ export function StatCard({
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block transition-opacity hover:opacity-80">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

@@ -113,24 +113,28 @@ export function DashboardView() {
             value={stats?.dueToday ?? 0}
             icon={CheckCircle2}
             accent="#3b82f6"
+            href="/tasks"
           />
           <StatCard
             label="Active Projects"
             value={stats?.activeProjects ?? 0}
             icon={FolderKanban}
             accent="#22c55e"
+            href="/projects"
           />
           <StatCard
             label="Overdue"
             value={stats?.overdueTasks ?? 0}
             icon={AlertTriangle}
             accent="#ef4444"
+            href="/tasks"
           />
           <StatCard
             label="Tracked Today"
             value={formatDuration(stats?.trackedTodaySeconds ?? 0)}
             icon={Timer}
             accent="#a855f7"
+            href="/time-tracking"
           />
         </div>
       )}

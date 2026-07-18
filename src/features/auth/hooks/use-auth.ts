@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -19,24 +19,19 @@ export function useCurrentUser(enabled = true) {
 }
 
 export function useAuthListener() {
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
   const queryClient = useQueryClient();
   const setUser = useAuthStore((s) => s.setUser);
   const reset = useAuthStore((s) => s.reset);
   const router = useRouter();
 
   useEffect(() => {
+    const supabase = supabaseRef.current;
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        try {
-          const user = await authApi.getUser();
-          setUser(user);
-          queryClient.setQueryData(queryKeys.auth.me, user);
-        } catch {
-          // ignore
-        }
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
       } else if (event === "SIGNED_OUT") {
         reset();
         queryClient.clear();
@@ -45,7 +40,7 @@ export function useAuthListener() {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase, queryClient, setUser, reset, router]);
+  }, [queryClient, setUser, reset, router]);
 }
 
 export function useLogin() {
