@@ -45,6 +45,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   KANBAN_COLUMNS,
@@ -239,447 +240,489 @@ function TaskDetailBody({
             placeholder="Task title"
           />
 
-          {/* Status + Priority */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-muted-foreground text-xs">Status</Label>
-              <Select
-                value={task.status}
-                onValueChange={(v) => patch({ status: v as TaskStatus })}
-              >
-                <SelectTrigger className="h-9 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {KANBAN_COLUMNS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      <span
-                        className="mr-1.5 inline-block size-2 rounded-full"
-                        style={{ backgroundColor: TASK_STATUS_META[s].color }}
-                      />
-                      {TASK_STATUS_META[s].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-muted-foreground text-xs">Priority</Label>
-              <Select
-                value={task.priority}
-                onValueChange={(v) => patch({ priority: v as TaskPriority })}
-              >
-                <SelectTrigger className="h-9 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(TASK_PRIORITY).map((p) => (
-                    <SelectItem key={p} value={p}>
-                      <span
-                        className="mr-1.5 inline-block size-2 rounded-full"
-                        style={{
-                          backgroundColor: TASK_PRIORITY_META[p].color,
-                        }}
-                      />
-                      {TASK_PRIORITY_META[p].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="mb-2 grid h-9 w-full grid-cols-2 rounded-xl p-1">
+              <TabsTrigger value="details" className="rounded-lg">
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="subtasks" className="rounded-lg">
+                Subtasks
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Deadline + estimate */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-muted-foreground text-xs">Deadline</Label>
-              <Input
-                type="date"
-                className="h-9"
-                defaultValue={task.deadline?.slice(0, 10) ?? ""}
-                onChange={(e) =>
-                  patch({
-                    deadline: e.target.value
-                      ? `${e.target.value}T00:00:00Z`
-                      : null,
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-muted-foreground text-xs">
-                Est. hours
-              </Label>
-              <Input
-                type="number"
-                min={0}
-                step={0.5}
-                className="h-9"
-                defaultValue={task.estimatedHours ?? ""}
-                onBlur={(e) =>
-                  patch({
-                    estimatedHours: e.target.value
-                      ? Number(e.target.value)
-                      : null,
-                  })
-                }
-              />
-            </div>
-          </div>
+            <TabsContent value="details" className="space-y-6">
+              {/* Status + Priority */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground text-xs">Status</Label>
+                  <Select
+                    value={task.status}
+                    onValueChange={(v) => patch({ status: v as TaskStatus })}
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {KANBAN_COLUMNS.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          <span
+                            className="mr-1.5 inline-block size-2 rounded-full"
+                            style={{ backgroundColor: TASK_STATUS_META[s].color }}
+                          />
+                          {TASK_STATUS_META[s].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground text-xs">Priority</Label>
+                  <Select
+                    value={task.priority}
+                    onValueChange={(v) => patch({ priority: v as TaskPriority })}
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(TASK_PRIORITY).map((p) => (
+                        <SelectItem key={p} value={p}>
+                          <span
+                            className="mr-1.5 inline-block size-2 rounded-full"
+                            style={{
+                              backgroundColor: TASK_PRIORITY_META[p].color,
+                            }}
+                          />
+                          {TASK_PRIORITY_META[p].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          {/* Assignee + time */}
-          <div className="border-border flex items-center justify-between rounded-xl border px-3 py-2">
-            <div className="flex items-center gap-2 text-sm">
-              <UserCircle2 className="text-muted-foreground size-4" />
-              {task.assignee ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <Avatar className="size-5">
-                    <AvatarFallback className="bg-primary/15 text-primary text-[9px]">
-                      {getInitials(task.assignee.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {task.assignee.name}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">Unassigned</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-xs">
-                {formatDuration(task.timeSpentSeconds)} tracked
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 rounded-lg"
-                onClick={() =>
-                  patch({
-                    assigneeId: task.assignee
-                      ? null
-                      : (currentUser?.id ?? null),
-                  })
-                }
-              >
-                {task.assignee ? "Unassign" : "Assign me"}
-              </Button>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-1.5">
-            <Label className="text-muted-foreground text-xs">Tags</Label>
-            <TagSelector
-              selectedIds={task.tags.map((t) => t.id)}
-              onChange={(ids) => patch({ tagIds: ids })}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-1.5">
-            <Label className="text-muted-foreground text-xs">Description</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onBlur={() =>
-                description !== (task.description ?? "") &&
-                patch({ description: description || null })
-              }
-              rows={4}
-              placeholder="Add more detail…"
-            />
-          </div>
-
-          {/* Subtasks */}
-          <Section title="Subtasks" icon={Check}>
-            <div className="space-y-1.5">
-              {subtasks.map((s) => (
-                <div
-                  key={s.id}
-                  className="group flex items-center gap-2 rounded-lg px-1 py-0.5"
-                >
-                  <Checkbox
-                    checked={s.completed}
-                    onCheckedChange={(c) =>
-                      mutations.toggleSubtask.mutate({
-                        id: s.id,
-                        completed: Boolean(c),
+              {/* Deadline + estimate */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground text-xs">Deadline</Label>
+                  <Input
+                    type="date"
+                    className="h-9"
+                    defaultValue={task.deadline?.slice(0, 10) ?? ""}
+                    onChange={(e) =>
+                      patch({
+                        deadline: e.target.value
+                          ? `${e.target.value}T00:00:00Z`
+                          : null,
                       })
                     }
                   />
-                  <span
-                    className={cn(
-                      "flex-1 text-sm",
-                      s.completed && "text-muted-foreground line-through",
-                    )}
-                  >
-                    {s.title}
-                  </span>
-                  <button
-                    onClick={() => mutations.deleteSubtask.mutate(s.id)}
-                    className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <X className="size-3.5" />
-                  </button>
                 </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newSubtask}
-                onChange={(e) => setNewSubtask(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newSubtask.trim()) {
-                    mutations.addSubtask.mutate(newSubtask.trim());
-                    setNewSubtask("");
-                  }
-                }}
-                placeholder="Add subtask…"
-                className="h-8"
-              />
-            </div>
-          </Section>
-
-          {/* Checklist */}
-          <Section title="Checklist" icon={Check}>
-            <div className="space-y-1.5">
-              {checklist.map((c) => (
-                <div
-                  key={c.id}
-                  className="group flex items-center gap-2 rounded-lg px-1 py-0.5"
-                >
-                  <Checkbox
-                    checked={c.completed}
-                    onCheckedChange={(v) =>
-                      mutations.toggleChecklistItem.mutate({
-                        id: c.id,
-                        completed: Boolean(v),
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground text-xs">
+                    Est. hours
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    className="h-9"
+                    defaultValue={task.estimatedHours ?? ""}
+                    onBlur={(e) =>
+                      patch({
+                        estimatedHours: e.target.value
+                          ? Number(e.target.value)
+                          : null,
                       })
                     }
                   />
-                  <span
-                    className={cn(
-                      "flex-1 text-sm",
-                      c.completed && "text-muted-foreground line-through",
-                    )}
-                  >
-                    {c.content}
+                </div>
+              </div>
+
+              {/* Assignee + time */}
+              <div className="border-border flex items-center justify-between rounded-xl border px-3 py-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <UserCircle2 className="text-muted-foreground size-4" />
+                  {task.assignee ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Avatar className="size-5">
+                        <AvatarFallback className="bg-primary/15 text-primary text-[9px]">
+                          {getInitials(task.assignee.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {task.assignee.name}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Unassigned</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-xs">
+                    {formatDuration(task.timeSpentSeconds)} tracked
                   </span>
-                  <button
-                    onClick={() => mutations.deleteChecklistItem.mutate(c.id)}
-                    className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 rounded-lg"
+                    onClick={() =>
+                      patch({
+                        assigneeId: task.assignee
+                          ? null
+                          : (currentUser?.id ?? null),
+                      })
+                    }
                   >
-                    <X className="size-3.5" />
-                  </button>
+                    {task.assignee ? "Unassign" : "Assign me"}
+                  </Button>
                 </div>
-              ))}
-            </div>
-            <Input
-              value={newChecklist}
-              onChange={(e) => setNewChecklist(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newChecklist.trim()) {
-                  mutations.addChecklistItem.mutate(newChecklist.trim());
-                  setNewChecklist("");
-                }
-              }}
-              placeholder="Add checklist item…"
-              className="h-8"
-            />
-          </Section>
+              </div>
 
-          {/* Dependencies */}
-          <Section title="Dependencies" icon={Link2}>
-            <div className="space-y-1.5">
-              {dependencies.map((d) => (
-                <div
-                  key={d.id}
-                  className="group border-border flex items-center gap-2 rounded-lg border px-2 py-1"
-                >
-                  <span className="flex-1 truncate text-sm">{d.title}</span>
-                  <button
-                    onClick={() => mutations.removeDependency.mutate(d.id)}
-                    className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            {availableDeps.length > 0 && (
-              <Select
-                value=""
-                onValueChange={(v) => v && mutations.addDependency.mutate(v)}
-              >
-                <SelectTrigger className="h-8 w-full">
-                  <SelectValue placeholder="Add dependency…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDeps.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </Section>
-
-          {/* Attachments */}
-          <Section title="Attachments" icon={Paperclip}>
-            <div className="space-y-1.5">
-              {attachments.map((a) => (
-                <div
-                  key={a.id}
-                  className="group border-border flex items-center gap-2 rounded-lg border px-2.5 py-1.5"
-                >
-                  <Paperclip className="text-muted-foreground size-3.5 shrink-0" />
-                  <a
-                    href={`${env.apiBaseUrl}${a.fileUrl}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-primary min-w-0 flex-1 truncate text-sm hover:underline"
-                  >
-                    {a.fileName}
-                  </a>
-                  <span className="text-muted-foreground shrink-0 text-xs">
-                    {formatBytes(a.sizeBytes)}
-                  </span>
-                  <a
-                    href={`${env.apiBaseUrl}${a.fileUrl}`}
-                    download={a.fileName}
-                    className="text-muted-foreground hover:text-foreground"
-                    aria-label="Download"
-                  >
-                    <Download className="size-3.5" />
-                  </a>
-                  <button
-                    onClick={() => mutations.deleteAttachment.mutate(a.id)}
-                    className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-label="Delete attachment"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) mutations.uploadAttachment.mutate(file);
-                e.target.value = "";
-              }}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 w-full gap-1.5 rounded-lg border-dashed"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={mutations.uploadAttachment.isPending}
-            >
-              {mutations.uploadAttachment.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Plus className="size-3.5" />
-              )}
-              Upload file
-            </Button>
-          </Section>
-
-          {/* GitHub */}
-          <Section title="GitHub" icon={GitBranch}>
-            <div className="grid gap-2">
-              {(
-                [
-                  ["githubRepoUrl", "Repository URL"],
-                  ["githubIssueUrl", "Issue URL"],
-                  ["githubPrUrl", "Pull request URL"],
-                  ["githubBranch", "Branch name"],
-                ] as const
-              ).map(([key, label]) => (
-                <Input
-                  key={key}
-                  value={github[key]}
-                  placeholder={label}
-                  className="h-8"
-                  onChange={(e) =>
-                    setGithub((g) => ({ ...g, [key]: e.target.value }))
-                  }
-                  onBlur={() =>
-                    github[key] !== (task[key] ?? "") &&
-                    patch({ [key]: github[key] || null } as Record<
-                      string,
-                      string | null
-                    >)
-                  }
+              {/* Tags */}
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-xs">Tags</Label>
+                <TagSelector
+                  selectedIds={task.tags.map((t) => t.id)}
+                  onChange={(ids) => patch({ tagIds: ids })}
                 />
-              ))}
-            </div>
-          </Section>
+              </div>
 
-          {/* Comments */}
-          <Section title="Comments" icon={MessageSquare}>
-            <div className="space-y-3">
-              {comments.map((c) => (
-                <div key={c.id} className="group flex gap-2.5">
-                  <Avatar className="size-7 shrink-0">
-                    <AvatarFallback className="bg-primary/15 text-primary text-[10px]">
-                      {getInitials(c.author?.name ?? "?")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="bg-muted flex-1 rounded-xl px-3 py-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">
-                        {c.author?.name ?? "Unknown"}
+              {/* Description */}
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-xs">Description</Label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onBlur={() =>
+                    description !== (task.description ?? "") &&
+                    patch({ description: description || null })
+                  }
+                  rows={2}
+                  className="min-h-20"
+                  placeholder="Add more detail…"
+                />
+              </div>
+
+              {/* Checklist */}
+              <Section title="Checklist" icon={Check}>
+                <div className="space-y-1.5">
+                  {checklist.map((c) => (
+                    <div
+                      key={c.id}
+                      className="group flex items-center gap-2 rounded-lg px-1 py-0.5"
+                    >
+                      <Checkbox
+                        checked={c.completed}
+                        onCheckedChange={(v) =>
+                          mutations.toggleChecklistItem.mutate({
+                            id: c.id,
+                            completed: Boolean(v),
+                          })
+                        }
+                      />
+                      <span
+                        className={cn(
+                          "flex-1 text-sm",
+                          c.completed && "text-muted-foreground line-through",
+                        )}
+                      >
+                        {c.content}
                       </span>
                       <button
-                        onClick={() => mutations.deleteComment.mutate(c.id)}
+                        onClick={() => mutations.deleteChecklistItem.mutate(c.id)}
                         className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
                       >
-                        <X className="size-3" />
+                        <X className="size-3.5" />
                       </button>
                     </div>
-                    <p className="mt-0.5 text-sm whitespace-pre-wrap">
-                      {c.body}
-                    </p>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write a comment…"
-                rows={2}
-                className="min-h-9"
-              />
-              <Button
-                size="icon"
-                className="size-9 shrink-0 rounded-xl"
-                disabled={!newComment.trim() || mutations.addComment.isPending}
-                onClick={() => {
-                  mutations.addComment.mutate(newComment.trim());
-                  setNewComment("");
-                }}
-                aria-label="Send comment"
-              >
-                <Plus className="size-4" />
-              </Button>
-            </div>
-          </Section>
+                <Input
+                  value={newChecklist}
+                  onChange={(e) => setNewChecklist(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newChecklist.trim()) {
+                      mutations.addChecklistItem.mutate(newChecklist.trim());
+                      setNewChecklist("");
+                    }
+                  }}
+                  placeholder="Add checklist item…"
+                  className="h-8"
+                />
+              </Section>
 
-          <div className="border-border text-muted-foreground flex items-center gap-4 border-t pt-4 text-xs">
-            <span className="inline-flex items-center gap-1">
-              <CalendarClock className="size-3.5" /> Created{" "}
-              {formatDateTime(task.createdAt)}
-            </span>
-          </div>
+              {/* Dependencies */}
+              <Section title="Dependencies" icon={Link2}>
+                <div className="space-y-1.5">
+                  {dependencies.map((d) => (
+                    <div
+                      key={d.id}
+                      className="group border-border flex items-center gap-2 rounded-lg border px-2 py-1"
+                    >
+                      <span className="flex-1 truncate text-sm">{d.title}</span>
+                      <button
+                        onClick={() => mutations.removeDependency.mutate(d.id)}
+                        className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {availableDeps.length > 0 && (
+                  <Select
+                    value=""
+                    onValueChange={(v) => v && mutations.addDependency.mutate(v)}
+                  >
+                    <SelectTrigger className="h-8 w-full">
+                      <SelectValue placeholder="Add dependency…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableDeps.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </Section>
+
+              {/* Attachments */}
+              <Section title="Attachments" icon={Paperclip}>
+                <div className="space-y-1.5">
+                  {attachments.map((a) => (
+                    <div
+                      key={a.id}
+                      className="group border-border flex items-center gap-2 rounded-lg border px-2.5 py-1.5"
+                    >
+                      <Paperclip className="text-muted-foreground size-3.5 shrink-0" />
+                      <a
+                        href={`${env.apiBaseUrl}${a.fileUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-primary min-w-0 flex-1 truncate text-sm hover:underline"
+                      >
+                        {a.fileName}
+                      </a>
+                      <span className="text-muted-foreground shrink-0 text-xs">
+                        {formatBytes(a.sizeBytes)}
+                      </span>
+                      <a
+                        href={`${env.apiBaseUrl}${a.fileUrl}`}
+                        download={a.fileName}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label="Download"
+                      >
+                        <Download className="size-3.5" />
+                      </a>
+                      <button
+                        onClick={() => mutations.deleteAttachment.mutate(a.id)}
+                        className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label="Delete attachment"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) mutations.uploadAttachment.mutate(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-full gap-1.5 rounded-lg border-dashed"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={mutations.uploadAttachment.isPending}
+                >
+                  {mutations.uploadAttachment.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="size-3.5" />
+                  )}
+                  Upload file
+                </Button>
+              </Section>
+
+              {/* GitHub */}
+              <Section title="GitHub" icon={GitBranch}>
+                <div className="grid gap-2">
+                  {(
+                    [
+                      ["githubRepoUrl", "Repository URL"],
+                      ["githubIssueUrl", "Issue URL"],
+                      ["githubPrUrl", "Pull request URL"],
+                      ["githubBranch", "Branch name"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <Input
+                      key={key}
+                      value={github[key]}
+                      placeholder={label}
+                      className="h-8"
+                      onChange={(e) =>
+                        setGithub((g) => ({ ...g, [key]: e.target.value }))
+                      }
+                      onBlur={() =>
+                        github[key] !== (task[key] ?? "") &&
+                        patch({ [key]: github[key] || null } as Record<
+                          string,
+                          string | null
+                        >)
+                      }
+                    />
+                  ))}
+                </div>
+              </Section>
+
+              {/* Comments */}
+              <Section title="Comments" icon={MessageSquare}>
+                <div className="space-y-3">
+                  {comments.map((c) => (
+                    <div key={c.id} className="group flex gap-2.5">
+                      <Avatar className="size-7 shrink-0">
+                        <AvatarFallback className="bg-primary/15 text-primary text-[10px]">
+                          {getInitials(c.author?.name ?? "?")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="bg-muted flex-1 rounded-xl px-3 py-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium">
+                            {c.author?.name ?? "Unknown"}
+                          </span>
+                          <button
+                            onClick={() => mutations.deleteComment.mutate(c.id)}
+                            className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </div>
+                        <p className="mt-0.5 text-sm whitespace-pre-wrap">
+                          {c.body}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Write a comment…"
+                    rows={2}
+                    className="min-h-9"
+                  />
+                  <Button
+                    size="icon"
+                    className="size-9 shrink-0 rounded-xl"
+                    disabled={!newComment.trim() || mutations.addComment.isPending}
+                    onClick={() => {
+                      mutations.addComment.mutate(newComment.trim());
+                      setNewComment("");
+                    }}
+                    aria-label="Send comment"
+                  >
+                    <Plus className="size-4" />
+                  </Button>
+                </div>
+              </Section>
+
+              <div className="border-border text-muted-foreground flex items-center gap-4 border-t pt-4 text-xs">
+                <span className="inline-flex items-center gap-1">
+                  <CalendarClock className="size-3.5" /> Created{" "}
+                  {formatDateTime(task.createdAt)}
+                </span>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="subtasks" className="space-y-3">
+              <Section title="Subtasks" icon={Check}>
+                <div className="flex gap-2">
+                  <Input
+                    value={newSubtask}
+                    onChange={(e) => setNewSubtask(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newSubtask.trim()) {
+                        mutations.addSubtask.mutate(newSubtask.trim());
+                        setNewSubtask("");
+                      }
+                    }}
+                    placeholder="Add subtask…"
+                    className="h-8"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 shrink-0 gap-1.5 rounded-lg px-3"
+                    disabled={!newSubtask.trim() || mutations.addSubtask.isPending}
+                    onClick={() => {
+                      if (!newSubtask.trim()) return;
+                      mutations.addSubtask.mutate(newSubtask.trim());
+                      setNewSubtask("");
+                    }}
+                    aria-label="Add subtask"
+                  >
+                    {mutations.addSubtask.isPending ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="size-3.5" />
+                    )}
+                    Add
+                  </Button>
+                </div>
+                <div className="space-y-1.5">
+                  {subtasks.length > 0 ? (
+                    subtasks.map((s) => (
+                      <div
+                        key={s.id}
+                        className="group flex items-center gap-2 rounded-lg px-1 py-0.5"
+                      >
+                        <Checkbox
+                          checked={s.completed}
+                          onCheckedChange={(c) =>
+                            mutations.toggleSubtask.mutate({
+                              id: s.id,
+                              completed: Boolean(c),
+                            })
+                          }
+                        />
+                        <span
+                          className={cn(
+                            "flex-1 text-sm",
+                            s.completed && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {s.title}
+                        </span>
+                        <button
+                          onClick={() => mutations.deleteSubtask.mutate(s.id)}
+                          className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground px-1 text-sm">
+                      No subtasks yet. Add one above to break this work down.
+                    </p>
+                  )}
+                </div>
+              </Section>
+            </TabsContent>
+          </Tabs>
         </div>
       </ScrollArea>
+
     </div>
   );
 }

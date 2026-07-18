@@ -10,7 +10,11 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TASK_PRIORITY_META } from "@/config/constants";
-import { formatDate, getInitials } from "@/lib/format";
+import {
+  formatDeadlineDate,
+  getInitials,
+  isDeadlineOverdue,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/types/domain";
 
@@ -35,10 +39,7 @@ export function TaskCard({
   const commentCount = task.comments?.length ?? 0;
   const attachmentCount = task.attachments?.length ?? 0;
 
-  const isOverdue =
-    task.deadline &&
-    task.status !== "done" &&
-    new Date(task.deadline).getTime() < Date.now();
+  const isOverdue = task.status !== "done" && isDeadlineOverdue(task.deadline);
 
   return (
     <div
@@ -128,7 +129,7 @@ export function TaskCard({
               )}
             >
               <CalendarClock className="size-3.5" />
-              {formatDate(task.deadline, "MMM d")}
+              {formatDeadlineDate(task.deadline, "MMM d")}
             </span>
           )}
           {task.assignee && (

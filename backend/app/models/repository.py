@@ -10,9 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from app.models.project import Project
-    from app.models.user import User
-    from app.models.workspace import Workspace
+    pass
 
 
 class RepositoryConnection(UUIDMixin, TimestampMixin, Base):

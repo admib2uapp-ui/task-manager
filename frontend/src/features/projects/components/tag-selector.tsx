@@ -4,7 +4,6 @@ import { Check, Plus } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCreateTag, useTags } from "@/features/projects/hooks/use-tags";
 import { cn } from "@/lib/utils";
 
@@ -62,8 +61,8 @@ export function TagSelector({ selectedIds, onChange }: TagSelectorProps) {
         </Button>
       </div>
 
-      <ScrollArea className="max-h-28">
-        <div className="flex flex-wrap gap-1.5 pr-2">
+      <div className="max-h-28 overflow-y-auto pr-2">
+        <div className="flex flex-wrap gap-1.5">
           {tags.map((tag) => {
             const active = selectedIds.includes(tag.id);
             return (
@@ -95,7 +94,7 @@ export function TagSelector({ selectedIds, onChange }: TagSelectorProps) {
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

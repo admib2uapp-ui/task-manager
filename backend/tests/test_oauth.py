@@ -2,23 +2,16 @@ from __future__ import annotations
 
 from httpx import AsyncClient
 
-BASE = "/api/v1/auth/oauth"
+GITHUB_STATUS = "/api/v1/auth/github/status"
 
 
-async def test_providers_disabled_by_default(client: AsyncClient) -> None:
-    resp = await client.get(f"{BASE}/providers")
+async def test_github_status_unauthenticated(client: AsyncClient) -> None:
+    resp = await client.get(GITHUB_STATUS)
+    assert resp.status_code == 401
+
+
+async def test_github_status_authenticated(auth_client: AsyncClient) -> None:
+    resp = await auth_client.get(GITHUB_STATUS)
     assert resp.status_code == 200
     body = resp.json()
-    assert body == {"google": False, "github": False}
-
-
-async def test_start_unconfigured_provider_returns_400(
-    client: AsyncClient,
-) -> None:
-    resp = await client.get(f"{BASE}/google/start", follow_redirects=False)
-    assert resp.status_code == 400
-
-
-async def test_unknown_provider_returns_400(client: AsyncClient) -> None:
-    resp = await client.get(f"{BASE}/bitbucket/start", follow_redirects=False)
-    assert resp.status_code == 400
+    assert body == {"connected": False, "login": None, "avatarUrl": None}

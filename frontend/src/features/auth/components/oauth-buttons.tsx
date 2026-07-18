@@ -1,7 +1,7 @@
 "use client";
 
-import { authApi } from "@/features/auth/api/auth-api";
 import { Button } from "@/components/ui/button";
+import { API_URL } from "@/lib/env";
 
 function GoogleIcon() {
   return (
@@ -22,6 +22,10 @@ function GithubIcon() {
   );
 }
 
+function oauthLogin(provider: string) {
+  window.location.href = `${API_URL}/auth/oauth/${provider}/login`;
+}
+
 export function OAuthButtons() {
   return (
     <div className="space-y-3">
@@ -30,9 +34,7 @@ export function OAuthButtons() {
           type="button"
           variant="outline"
           className="h-10 w-full gap-2 rounded-xl"
-          onClick={() => {
-            authApi.signInWithOAuth("google");
-          }}
+          onClick={() => oauthLogin("google")}
         >
           <GoogleIcon /> Continue with Google
         </Button>
@@ -40,9 +42,7 @@ export function OAuthButtons() {
           type="button"
           variant="outline"
           className="h-10 w-full gap-2 rounded-xl"
-          onClick={() => {
-            authApi.signInWithOAuth("github");
-          }}
+          onClick={() => oauthLogin("github")}
         >
           <GithubIcon /> Continue with GitHub
         </Button>

@@ -13,5 +13,9 @@ class UserRepository(BaseRepository[User]):
         stmt = select(User).where(User.email == email.lower())
         return await self.session.scalar(stmt)
 
+    async def get_by_supabase_id(self, supabase_id: str) -> User | None:
+        stmt = select(User).where(User.supabase_id == supabase_id)
+        return await self.session.scalar(stmt)
+
     async def email_exists(self, email: str) -> bool:
         return await self.get_by_email(email) is not None

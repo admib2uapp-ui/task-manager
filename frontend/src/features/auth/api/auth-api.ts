@@ -1,50 +1,24 @@
-import { createClient } from "@/lib/supabase/client";
-import type { Provider } from "@supabase/supabase-js";
+import { api } from "@/lib/api-client";
+import type { User } from "@/types/domain";
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  user: User;
+}
 
 export const authApi = {
-  signUp: (email: string, password: string, name: string) => {
-    const supabase = createClient();
-    return supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } },
-    });
-  },
+  login: (email: string, password: string) =>
+    api.post<AuthResponse>("/auth/login", { email, password }),
 
-  signIn: (email: string, password: string) => {
-    const supabase = createClient();
-    return supabase.auth.signInWithPassword({ email, password });
-  },
+  register: (name: string, email: string, password: string) =>
+    api.post<AuthResponse>("/auth/register", { name, email, password }),
 
-  signOut: () => {
-    const supabase = createClient();
-    return supabase.auth.signOut();
-  },
+  syncUser: () => api.post<User>("/auth/sync"),
 
-  getUser: async () => {
-    const supabase = createClient();
-    const { data } = await supabase.auth.getUser();
-    return data.user;
-  },
+  getUser: () => api.get<User>("/auth/me"),
 
-  signInWithOAuth: (provider: Provider) => {
-    const supabase = createClient();
-    return supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  },
-
-  updateProfile: async (payload: { name?: string; avatarUrl?: string | null }) => {
-    const supabase = createClient();
-    const { data } = await supabase.auth.updateUser({
-      data: {
-        name: payload.name,
-        avatar_url: payload.avatarUrl,
-      },
-    });
-    return data.user;
-  },
+  updateProfile: (payload: { name?: string; avatarUrl?: string | null }) =>
+    api.patch<User>("/auth/me", payload),
 };

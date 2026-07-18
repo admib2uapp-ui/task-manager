@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable, Coroutine
 
 from httpx import AsyncClient
 
@@ -207,21 +208,16 @@ async def test_task_not_found(auth_client: AsyncClient) -> None:
 
 
 async def test_task_workspace_isolation(
-    auth_client: AsyncClient, client: AsyncClient
+    auth_client: AsyncClient,
+    client: AsyncClient,
+    create_user: Callable[[str, str], Coroutine[None, None, str]],
 ) -> None:
     project_id = await _make_project(auth_client)
     task = (
         await auth_client.post(TASKS, json={"projectId": project_id, "title": "Secret"})
     ).json()
 
-    other = await client.post(
-        "/api/v1/auth/register",
-        json={
-            "name": "Alan Turing",
-            "email": "alan2@example.com",
-            "password": "supersecret123",
-        },
-    )
-    client.headers.update({"Authorization": f"Bearer {other.json()['accessToken']}"})
+    other_token = await create_user("Alan Turing", "alan2@example.com")
+    client.headers.update({"Authorization": f"Bearer {other_token}"})
     resp = await client.get(f"{TASKS}/{task['id']}")
     assert resp.status_code == 404

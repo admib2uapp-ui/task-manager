@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 class User(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "users"
 
+    supabase_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, nullable=True
+    )
     email: Mapped[str] = mapped_column(
         String(320), unique=True, index=True, nullable=False
     )

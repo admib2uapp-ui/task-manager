@@ -16,7 +16,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
@@ -51,6 +50,7 @@ import { useRepositories } from "@/features/repositories/hooks/use-repositories"
 import { useTriggerScan } from "@/features/repositories/hooks/use-repositories";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useTasks } from "@/features/tasks/hooks/use-tasks";
+import { getAuthSession } from "@/features/auth/lib/auth-session";
 import { cn } from "@/lib/utils";
 import { formatRelative } from "@/lib/format";
 import type { GithubRepo } from "@/features/github/api/github-api";
@@ -179,9 +179,8 @@ export function GitHubView() {
   const [connectingRepo, setConnectingRepo] = useState<string | null>(null);
 
   const connectUrl = useCallback(async () => {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    return `${githubApi.connectUrl()}?token=${session?.access_token ?? ""}`;
+    const session = getAuthSession();
+    return `${githubApi.connectUrl()}?token=${session?.accessToken ?? ""}`;
   }, []);
 
   const connectedParam = searchParams.get("connected");

@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { FullScreenLoader } from "@/components/shared/full-screen-loader";
 import { createClient } from "@/lib/supabase/client";
+import { ApiError } from "@/lib/api-client";
 import { useCurrentUser } from "@/features/auth/hooks/use-auth";
 import { useAuthStore } from "@/features/auth/store/auth-store";
+import { getAuthSession } from "@/features/auth/lib/auth-session";
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -18,18 +20,21 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setHasSession(Boolean(session));
+    supabase.auth.getSession().then(({ data }) => {
+      const supabaseToken = Boolean(data.session?.access_token);
+      const localToken = Boolean(getAuthSession()?.accessToken);
+      setHasSession(supabaseToken || localToken);
     });
   }, []);
 
-  const { data, isError, isLoading } = useCurrentUser();
+  const { data, error, isError, isLoading } = useCurrentUser(hasSession === true);
 
   useEffect(() => {
     if (mounted && hasSession === false) {
+      reset();
       router.replace("/login");
     }
-  }, [mounted, hasSession, router]);
+  }, [mounted, hasSession, reset, router]);
 
   useEffect(() => {
     if (data) setUser(data);
@@ -40,7 +45,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       reset();
       router.replace("/login");
     }
-  }, [isError, reset, router]);
+  }, [error, isError, reset, router]);
 
   if (!mounted || hasSession === null || isLoading || !user) {
     return <FullScreenLoader label="Preparing your workspace…" />;

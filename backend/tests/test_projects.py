@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable, Coroutine
 
 from app.core.constants import DEFAULT_TAGS
 from httpx import AsyncClient
@@ -114,20 +115,14 @@ async def test_project_requires_auth(client: AsyncClient) -> None:
 
 
 async def test_project_workspace_isolation(
-    auth_client: AsyncClient, client: AsyncClient
+    auth_client: AsyncClient,
+    client: AsyncClient,
+    create_user: Callable[[str, str], Coroutine[None, None, str]],
 ) -> None:
     project = (await auth_client.post(PROJECTS, json={"name": "Private"})).json()
 
     # Register a second user and swap the auth header.
-    other = await client.post(
-        "/api/v1/auth/register",
-        json={
-            "name": "Alan Turing",
-            "email": "alan@example.com",
-            "password": "supersecret123",
-        },
-    )
-    other_token = other.json()["accessToken"]
+    other_token = await create_user("Alan Turing", "alan@example.com")
     client.headers.update({"Authorization": f"Bearer {other_token}"})
 
     response = await client.get(f"{PROJECTS}/{project['id']}")

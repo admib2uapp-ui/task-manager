@@ -1,91 +1,71 @@
 "use client";
 
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { queryKeys } from "@/lib/query-keys";
-import { authApi } from "@/features/auth/api/auth-api";
+import { authApi, type AuthResponse } from "@/features/auth/api/auth-api";
+import { setAuthSession, clearAuthSession } from "@/features/auth/lib/auth-session";
 import { useAuthStore } from "@/features/auth/store/auth-store";
 import type { User } from "@/types/domain";
 
-function toDomainUser(user: {
-  id: string;
-  email?: string;
-  user_metadata?: { name?: string };
-  created_at?: string;
-  updated_at?: string;
-}): User {
-  return {
-    id: user.id,
-    email: user.email ?? "",
-    name: (user.user_metadata?.name as string) ?? user.email?.split("@")[0] ?? "",
-    avatarUrl: null,
-    createdAt: user.created_at ?? new Date().toISOString(),
-    updatedAt: user.updated_at ?? new Date().toISOString(),
-  };
-}
-
-export function useCurrentUser() {
+export function useCurrentUser(enabled = true) {
   return useQuery({
     queryKey: queryKeys.auth.me,
-    queryFn: async () => {
-      const user = await authApi.getUser();
-      if (!user) throw new Error("No session");
-      return toDomainUser(user);
-    },
-    enabled: typeof window !== "undefined",
+    queryFn: authApi.getUser,
+    enabled: enabled && typeof window !== "undefined",
     retry: false,
     staleTime: 5 * 60_000,
   });
 }
 
 export function useAuthListener() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
   const setUser = useAuthStore((s) => s.setUser);
   const reset = useAuthStore((s) => s.reset);
-  const queryClient = useQueryClient();
+  const router = useRouter();
 
   useEffect(() => {
-    const supabase = createClient();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUser(toDomainUser(session.user));
-        queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
-      } else if (event === "SIGNED_OUT") {
-        reset();
-        queryClient.clear();
-      }
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event) => {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          try {
+            const user = await authApi.syncUser();
+            setUser(user);
+            queryClient.setQueryData(queryKeys.auth.me, user);
+          } catch {
+            // Sync failed — session may be invalid
+          }
+        } else if (event === "SIGNED_OUT") {
+          reset();
+          queryClient.clear();
+          router.replace("/login");
+        }
+      },
+    );
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [setUser, reset, queryClient]);
+    return () => subscription.unsubscribe();
+  }, [supabase, queryClient, setUser, reset, router]);
 }
 
-function useAuthSuccess() {
+export function useLogin() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const setUser = useAuthStore((s) => s.setUser);
 
-  return (user: unknown) => {
-    const u = user as Parameters<typeof toDomainUser>[0];
-    setUser(toDomainUser(u));
-    queryClient.setQueryData(queryKeys.auth.me, toDomainUser(u));
-    router.replace("/dashboard");
-  };
-}
-
-export function useLogin() {
-  const onSuccess = useAuthSuccess();
   return useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      authApi.signIn(email, password),
-    onSuccess: (data) => {
-      if (data.data.user) onSuccess(data.data.user);
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const res = await authApi.login(email, password);
+      setAuthSession({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+      return res.user;
+    },
+    onSuccess: (user) => {
+      setUser(user);
+      queryClient.setQueryData(queryKeys.auth.me, user);
+      router.replace("/dashboard");
     },
     onError: (error) => {
       const message =
@@ -96,9 +76,12 @@ export function useLogin() {
 }
 
 export function useRegister() {
-  const onSuccess = useAuthSuccess();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const setUser = useAuthStore((s) => s.setUser);
+
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       name,
       email,
       password,
@@ -106,16 +89,15 @@ export function useRegister() {
       name: string;
       email: string;
       password: string;
-    }) => authApi.signUp(email, password, name),
-    onSuccess: (data) => {
-      if (data.data.user) {
-        // With email confirmations off, user is signed in immediately
-        if (data.data.session) {
-          onSuccess(data.data.user);
-        } else {
-          toast.success("Check your email for the confirmation link.");
-        }
-      }
+    }) => {
+      const res = await authApi.register(name, email, password);
+      setAuthSession({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+      return res.user;
+    },
+    onSuccess: (user) => {
+      setUser(user);
+      queryClient.setQueryData(queryKeys.auth.me, user);
+      router.replace("/dashboard");
     },
     onError: (error) => {
       const message =
@@ -131,7 +113,9 @@ export function useLogout() {
   const reset = useAuthStore((s) => s.reset);
 
   return useMutation({
-    mutationFn: () => authApi.signOut(),
+    mutationFn: async () => {
+      clearAuthSession();
+    },
     onSettled: () => {
       reset();
       queryClient.clear();

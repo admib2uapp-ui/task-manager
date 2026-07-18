@@ -59,6 +59,20 @@ def create_app() -> FastAPI:
             "health": f"{settings.API_V1_PREFIX}/health",
         }
 
+    @app.get("/meta.json", tags=["root"], include_in_schema=False)
+    async def meta() -> dict[str, object]:
+        return {
+            "name": settings.PROJECT_NAME,
+            "version": "0.1.0",
+            "environment": settings.ENVIRONMENT,
+            "debug": settings.DEBUG,
+            "features": {
+                "google_oauth": settings.google_enabled,
+                "github_oauth": settings.github_enabled,
+                "llm": bool(settings.LLM_API_KEY),
+            },
+        }
+
     return app
 
 

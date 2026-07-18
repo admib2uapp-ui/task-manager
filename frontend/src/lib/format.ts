@@ -7,6 +7,19 @@ function toDate(value: ISODateString | Date | null | undefined): Date | null {
   return isValid(date) ? date : null;
 }
 
+function toIsoDateKey(
+  value: ISODateString | Date | null | undefined,
+): string | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+
+  const date = toDate(value);
+  return date ? format(date, "yyyy-MM-dd") : null;
+}
+
 export function formatDate(
   value: ISODateString | Date | null | undefined,
   pattern = "MMM d, yyyy",
@@ -19,6 +32,31 @@ export function formatDateTime(
   value: ISODateString | Date | null | undefined,
 ): string {
   return formatDate(value, "MMM d, yyyy • h:mm a");
+}
+
+export function formatDeadlineDate(
+  value: ISODateString | Date | null | undefined,
+  pattern = "MMM d, yyyy",
+): string {
+  const key = toIsoDateKey(value);
+  if (!key) return "—";
+
+  const date = new Date(`${key}T00:00:00Z`);
+  const options: Intl.DateTimeFormatOptions =
+    pattern === "MMM d"
+      ? { month: "short", day: "numeric", timeZone: "UTC" }
+      : { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" };
+
+  return new Intl.DateTimeFormat(undefined, options).format(date);
+}
+
+export function isDeadlineOverdue(
+  value: ISODateString | Date | null | undefined,
+  now = new Date(),
+): boolean {
+  const key = toIsoDateKey(value);
+  if (!key) return false;
+  return key < now.toISOString().slice(0, 10);
 }
 
 export function formatRelative(

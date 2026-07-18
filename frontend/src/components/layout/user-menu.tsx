@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
+import { useLogout } from "@/features/auth/hooks/use-auth";
 import { useAuthStore } from "@/features/auth/store/auth-store";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -21,13 +21,11 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ collapsed = false }: UserMenuProps) {
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const reset = useAuthStore((s) => s.reset);
+  const logout = useLogout();
 
   const handleLogout = () => {
-    reset();
-    router.replace("/login");
+    logout.mutate();
   };
 
   const displayName = user?.name ?? "Guest";

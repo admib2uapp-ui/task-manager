@@ -6,17 +6,14 @@ import uuid
 import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ConflictError, UnauthorizedError
+from app.core.exceptions import BadRequestError, ConflictError, UnauthorizedError
 from app.core.security import (
-    create_access_token,
-    create_refresh_token,
     decode_token,
     hash_password,
     verify_password,
 )
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import AuthResponse, TokenPair, UserRead
 from app.services.workspace_service import WorkspaceService
 
 
@@ -25,82 +22,6 @@ class AuthService:
         self.session = session
         self.users = UserRepository(session)
         self.workspaces = WorkspaceService(session)
-
-    # --------------------------- helpers -------------------------------
-    def _issue_tokens(self, user: User) -> TokenPair:
-        subject = str(user.id)
-        return TokenPair(
-            access_token=create_access_token(subject),
-            refresh_token=create_refresh_token(subject),
-        )
-
-    def _auth_response(self, user: User) -> AuthResponse:
-        tokens = self._issue_tokens(user)
-        return AuthResponse(
-            access_token=tokens.access_token,
-            refresh_token=tokens.refresh_token,
-            user=UserRead.model_validate(user),
-        )
-
-    # --------------------------- use cases -----------------------------
-    async def register(self, *, name: str, email: str, password: str) -> AuthResponse:
-        email = email.lower()
-        if await self.users.email_exists(email):
-            raise ConflictError("An account with this email already exists")
-
-        user = await self.users.create(
-            name=name,
-            email=email,
-            hashed_password=hash_password(password),
-        )
-
-        # Auto-provision a default workspace so the user can start immediately.
-        await self.workspaces.create_for_user(user)
-
-        return self._auth_response(user)
-
-    async def oauth_login(
-        self,
-        *,
-        email: str,
-        name: str | None = None,
-        avatar_url: str | None = None,
-    ) -> AuthResponse:
-        """Find or provision a user from a verified OAuth identity."""
-        email = email.lower()
-        user = await self.users.get_by_email(email)
-        if user is None:
-            user = await self.users.create(
-                name=name or email.split("@")[0],
-                email=email,
-                hashed_password=hash_password(secrets.token_urlsafe(32)),
-                avatar_url=avatar_url,
-            )
-            await self.workspaces.create_for_user(user)
-        elif avatar_url and not user.avatar_url:
-            user.avatar_url = avatar_url
-            await self.session.flush()
-        return self._auth_response(user)
-
-    async def authenticate(self, *, email: str, password: str) -> AuthResponse:
-        user = await self.users.get_by_email(email.lower())
-        if user is None or not verify_password(password, user.hashed_password):
-            raise UnauthorizedError("Invalid email or password")
-        if not user.is_active:
-            raise UnauthorizedError("Account is disabled")
-        return self._auth_response(user)
-
-    async def refresh(self, refresh_token: str) -> AuthResponse:
-        try:
-            payload = decode_token(refresh_token)
-        except jwt.PyJWTError as exc:
-            raise UnauthorizedError("Invalid refresh token") from exc
-
-        if payload.get("type") != "refresh":
-            raise UnauthorizedError("Invalid token type")
-
-        user = await self._load_user(payload.get("sub"))
-        return self._auth_response(user)
 
     async def get_user_from_access_token(self, token: str) -> User:
         try:
@@ -112,6 +33,69 @@ class AuthService:
             raise UnauthorizedError("Invalid token type")
 
         return await self._load_user(payload.get("sub"))
+
+    async def get_or_create_supabase_user(
+        self,
+        *,
+        supabase_id: str,
+        email: str,
+        name: str,
+    ) -> User:
+        email = email.lower()
+
+        user = await self.users.get_by_supabase_id(supabase_id)
+        if user is not None:
+            return user
+
+        user = await self.users.get_by_email(email)
+        if user is not None:
+            user.supabase_id = supabase_id
+            await self.session.flush()
+            return user
+
+        user = await self.users.create(
+            name=name,
+            email=email,
+            hashed_password=hash_password(secrets.token_urlsafe(32)),
+            supabase_id=supabase_id,
+        )
+        await self.workspaces.create_for_user(user)
+        return user
+
+    async def login(self, *, email: str, password: str) -> User:
+        email_lower = email.lower()
+        user = await self.users.get_by_email(email_lower)
+        if user is None:
+            raise UnauthorizedError("Invalid login credentials")
+        if user.supabase_id is not None:
+            raise BadRequestError(
+                "This account was created via Supabase. "
+                "Please sign in with Google or GitHub."
+            )
+        if not verify_password(password, user.hashed_password):
+            raise UnauthorizedError("Invalid login credentials")
+        if not user.is_active:
+            raise UnauthorizedError("User account is disabled")
+        return user
+
+    async def register(
+        self,
+        *,
+        name: str,
+        email: str,
+        password: str,
+    ) -> User:
+        email_lower = email.lower()
+        if await self.users.email_exists(email_lower):
+            raise ConflictError("A user with this email already exists")
+
+        user = await self.users.create(
+            name=name,
+            email=email_lower,
+            hashed_password=hash_password(password),
+        )
+        await self.workspaces.create_for_user(user)
+        return user
 
     async def _load_user(self, subject: str | None) -> User:
         if not subject:

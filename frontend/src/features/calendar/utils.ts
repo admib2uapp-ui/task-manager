@@ -18,7 +18,7 @@ export interface CalendarDay {
 }
 
 export const dateKey = (date: Date | string): string =>
-  format(typeof date === "string" ? new Date(date) : date, "yyyy-MM-dd");
+  typeof date === "string" ? date.slice(0, 10) : format(date, "yyyy-MM-dd");
 
 export function buildMonthGrid(month: Date): CalendarDay[] {
   const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 });

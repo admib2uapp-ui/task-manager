@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { FullScreenLoader } from "@/components/shared/full-screen-loader";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthSession } from "@/features/auth/lib/auth-session";
 
 export function GuestGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -13,8 +14,10 @@ export function GuestGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setHasSession(Boolean(session));
+    supabase.auth.getSession().then(({ data }) => {
+      const supabaseToken = Boolean(data.session?.access_token);
+      const localToken = Boolean(getAuthSession()?.accessToken);
+      setHasSession(supabaseToken || localToken);
     });
   }, []);
 

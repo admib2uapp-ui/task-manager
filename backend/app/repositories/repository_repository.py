@@ -4,7 +4,6 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.repository import (
     AIRepositoryReport,

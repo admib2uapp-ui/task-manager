@@ -81,3 +81,14 @@ def decode_token(token: str) -> dict[str, Any]:
         settings.JWT_SECRET_KEY,
         algorithms=[settings.JWT_ALGORITHM],
     )
+
+
+# --------------------------- Supabase JWT -----------------------------------
+def verify_supabase_token(token: str) -> dict[str, Any]:
+    """Decode and validate a Supabase JWT. Raises jwt.PyJWTError on failure."""
+    return jwt.decode(
+        token,
+        settings.SUPABASE_JWT_SECRET,
+        algorithms=[settings.SUPABASE_JWT_ALGORITHM],
+        audience="authenticated",
+    )

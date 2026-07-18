@@ -23,16 +23,17 @@ import { getProjectIcon } from "@/config/icons";
 import { useDashboard } from "@/features/dashboard/hooks/use-dashboard";
 import { TaskDetailSheet } from "@/features/tasks/components/task-detail-sheet";
 import { useUIStore } from "@/stores/ui-store";
-import { formatDate, formatDuration } from "@/lib/format";
+import {
+  formatDeadlineDate,
+  formatDuration,
+  isDeadlineOverdue,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/types/domain";
 
 function TaskRow({ task, onClick }: { task: Task; onClick: () => void }) {
   const priority = TASK_PRIORITY_META[task.priority];
-  const overdue =
-    task.deadline &&
-    task.status !== "done" &&
-    new Date(task.deadline).getTime() < Date.now();
+  const overdue = task.status !== "done" && isDeadlineOverdue(task.deadline);
   return (
     <button
       onClick={onClick}
@@ -57,7 +58,7 @@ function TaskRow({ task, onClick }: { task: Task; onClick: () => void }) {
             overdue && "text-danger",
           )}
         >
-          {formatDate(task.deadline, "MMM d")}
+          {formatDeadlineDate(task.deadline, "MMM d")}
         </span>
       )}
     </button>

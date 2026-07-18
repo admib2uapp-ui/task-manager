@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from functools import lru_cache
 import os
+from functools import lru_cache
 from typing import Annotated
 
 from pydantic import Field, field_validator
@@ -33,11 +33,15 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_BYTES: int = 25 * 1024 * 1024  # 25 MB
 
-    # --- Security / JWT ---
+    # --- Security / JWT (custom backend tokens — kept for backward compat) ---
     JWT_SECRET_KEY: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+
+    # --- Supabase Auth ---
+    SUPABASE_JWT_SECRET: str = ""
+    SUPABASE_JWT_ALGORITHM: str = "HS256"
 
     # --- CORS ---
     BACKEND_CORS_ORIGINS: Annotated[list[str], NoDecode] = Field(

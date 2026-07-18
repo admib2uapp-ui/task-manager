@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getAuthSession } from "@/features/auth/lib/auth-session";
 import { env } from "@/lib/env";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -15,57 +15,58 @@ export function useRealtimeSync() {
   const attemptRef = useRef(0);
 
   const connect = useCallback(() => {
-    const supabase = createClient();
-
     let closed = false;
     let socket: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    const currentSession = getAuthSession();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.access_token) return;
+    if (!currentSession?.accessToken) {
+      return () => undefined;
+    }
 
-      function doConnect() {
-        if (closed) return;
+    const accessToken = currentSession.accessToken;
 
-        const wsBase = env.apiBaseUrl.replace(/^http/, "ws");
-        socket = new WebSocket(
-          `${wsBase}/api/${env.apiVersion}/ws?token=${encodeURIComponent(session!.access_token)}`,
-        );
+    function doConnect() {
+      if (closed) return;
 
-        socket.onopen = () => {
-          attemptRef.current = 0;
-        };
+      const wsBase = env.apiBaseUrl.replace(/^http/, "ws");
+      socket = new WebSocket(
+        `${wsBase}/api/${env.apiVersion}/ws?token=${encodeURIComponent(accessToken)}`,
+      );
 
-        socket.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data) as { type?: string };
-            if (message.type === "invalidate") {
-              queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
-              queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-              queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-              queryClient.invalidateQueries({ queryKey: ["notifications"] });
-            }
-          } catch {
-            /* ignore malformed frames */
+      socket.onopen = () => {
+        attemptRef.current = 0;
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data) as { type?: string };
+          if (message.type === "invalidate") {
+            queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+            queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+            queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
           }
-        };
+        } catch {
+          /* ignore malformed frames */
+        }
+      };
 
-        socket.onclose = () => {
-          if (!closed) {
-            const delay = Math.min(
-              INITIAL_DELAY * Math.pow(BACKOFF_FACTOR, attemptRef.current),
-              MAX_DELAY,
-            );
-            const jitter = delay * (0.5 + Math.random() * 0.5);
-            attemptRef.current += 1;
-            reconnectTimer = setTimeout(doConnect, jitter);
-          }
-        };
-        socket.onerror = () => socket?.close();
-      }
+      socket.onclose = () => {
+        if (!closed) {
+          const delay = Math.min(
+            INITIAL_DELAY * Math.pow(BACKOFF_FACTOR, attemptRef.current),
+            MAX_DELAY,
+          );
+          const jitter = delay * (0.5 + Math.random() * 0.5);
+          attemptRef.current += 1;
+          reconnectTimer = setTimeout(doConnect, jitter);
+        }
+      };
+      socket.onerror = () => socket?.close();
+    }
 
-      doConnect();
-    });
+    doConnect();
 
     return () => {
       closed = true;

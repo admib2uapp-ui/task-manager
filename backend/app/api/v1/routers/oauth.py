@@ -1,24 +1,21 @@
 from __future__ import annotations
 
 import uuid
-from urllib.parse import urlencode
 
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
 from app.core.config import settings
 from app.core.deps import CurrentUser, DbSession
-from app.core.exceptions import BadRequestError, NotFoundError
+from app.core.exceptions import BadRequestError
+from app.core.security import create_access_token, create_refresh_token
 from app.models.user import User
 from app.services.auth_service import AuthService
-from app.services.github_repo_service import GitHubRepoService
 from app.services.oauth_service import (
-    PROVIDERS,
     build_authorize_url,
     build_github_connect_url,
     complete_github_connect,
     complete_oauth,
-    enabled_providers,
     get_user_id_from_connect_state,
     verify_state,
 )
@@ -27,46 +24,54 @@ from app.utils.crypto import decrypt_token, encrypt_token
 router = APIRouter(prefix="/auth/oauth", tags=["oauth"])
 
 
-@router.get("/providers", response_model=dict)
-async def list_providers() -> dict[str, bool]:
-    return enabled_providers()
+# ── OAuth Login (Google / GitHub) ──────────────────────────────
 
 
-@router.get("/{provider}/start")
-async def oauth_start(provider: str) -> RedirectResponse:
-    if provider not in PROVIDERS:
-        raise BadRequestError("Unknown OAuth provider")
-    return RedirectResponse(build_authorize_url(provider), status_code=302)
+VALID_PROVIDERS = {"google", "github"}
+
+
+@router.get("/{provider}/login")
+async def oauth_login(provider: str) -> RedirectResponse:
+    if provider not in VALID_PROVIDERS:
+        raise BadRequestError(f"Unsupported provider: {provider}")
+    url = build_authorize_url(provider)
+    return RedirectResponse(url, status_code=302)
 
 
 @router.get("/{provider}/callback")
 async def oauth_callback(
     provider: str,
+    code: str,
+    state: str,
     db: DbSession,
-    code: str | None = None,
-    state: str | None = None,
 ) -> RedirectResponse:
-    try:
-        if provider not in PROVIDERS:
-            raise BadRequestError("Unknown OAuth provider")
-        verify_state(provider, state)
-        info = await complete_oauth(provider, code)
-        auth = await AuthService(db).oauth_login(
-            email=info.email, name=info.name, avatar_url=info.avatar_url
-        )
-    except Exception:  # noqa: BLE001 - any failure returns to the login page
+    if provider not in VALID_PROVIDERS:
         return RedirectResponse(
-            f"{settings.FRONTEND_URL}/login?error=oauth", status_code=302
+            f"{settings.FRONTEND_URL}/login?error=unsupported_provider",
+            status_code=302,
+        )
+    try:
+        verify_state(provider, state)
+        user_info = await complete_oauth(provider, code)
+    except Exception:
+        return RedirectResponse(
+            f"{settings.FRONTEND_URL}/login?error=oauth_failed",
+            status_code=302,
         )
 
-    fragment = urlencode(
-        {
-            "accessToken": auth.access_token,
-            "refreshToken": auth.refresh_token,
-        }
+    service = AuthService(db)
+    user = await service.get_or_create_supabase_user(
+        supabase_id=f"oauth:{provider}:{user_info.email}",
+        email=user_info.email,
+        name=user_info.name or user_info.email.split("@")[0],
     )
+
+    access_token = create_access_token(subject=str(user.id))
+    refresh_token = create_refresh_token(subject=str(user.id))
     return RedirectResponse(
-        f"{settings.FRONTEND_URL}/oauth/callback#{fragment}", status_code=302
+        f"{settings.FRONTEND_URL}/auth/callback?"
+        f"access_token={access_token}&refresh_token={refresh_token}",
+        status_code=302,
     )
 
 
@@ -138,7 +143,6 @@ async def github_list_repos(
         raise BadRequestError("GitHub account not connected")
 
     token = decrypt_token(current_user.github_token)
-    gh = GitHubRepoService(token)
 
     repos: list[dict] = []
     page = 1

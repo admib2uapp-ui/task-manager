@@ -3,10 +3,10 @@ from __future__ import annotations
 from fastapi import APIRouter, status
 
 from app.core.deps import CurrentUser, DbSession
+from app.core.security import create_access_token, create_refresh_token
 from app.schemas.auth import (
     AuthResponse,
     LoginRequest,
-    RefreshRequest,
     RegisterRequest,
     UpdateProfileRequest,
     UserRead,
@@ -24,27 +24,44 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 )
 async def register(payload: RegisterRequest, db: DbSession) -> AuthResponse:
     service = AuthService(db)
-    return await service.register(
-        name=payload.name, email=payload.email, password=payload.password
+    user = await service.register(
+        name=payload.name,
+        email=payload.email,
+        password=payload.password,
+    )
+    access_token = create_access_token(subject=str(user.id))
+    refresh_token = create_refresh_token(subject=str(user.id))
+    return AuthResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserRead.model_validate(user),
     )
 
 
 @router.post("/login", response_model=AuthResponse)
 async def login(payload: LoginRequest, db: DbSession) -> AuthResponse:
     service = AuthService(db)
-    return await service.authenticate(email=payload.email, password=payload.password)
+    user = await service.login(email=payload.email, password=payload.password)
+    access_token = create_access_token(subject=str(user.id))
+    refresh_token = create_refresh_token(subject=str(user.id))
+    return AuthResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserRead.model_validate(user),
+    )
 
 
-@router.post("/refresh", response_model=AuthResponse)
-async def refresh(payload: RefreshRequest, db: DbSession) -> AuthResponse:
-    service = AuthService(db)
-    return await service.refresh(payload.refresh_token)
+@router.post(
+    "/sync",
+    response_model=UserRead,
+    status_code=status.HTTP_200_OK,
+)
+async def sync_user(current_user: CurrentUser) -> UserRead:
+    return UserRead.model_validate(current_user)
 
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout(_current_user: CurrentUser) -> MessageResponse:
-    # Stateless JWT: the client discards its tokens. Endpoint exists for
-    # symmetry and future token-revocation/blacklist support.
     return MessageResponse(message="Logged out")
 
 

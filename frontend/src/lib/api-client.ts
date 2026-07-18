@@ -1,4 +1,5 @@
 import { API_URL } from "@/lib/env";
+import { createClient } from "@/lib/supabase/client";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -33,6 +34,7 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
   params?: Record<string, string | number | boolean | undefined | null>;
   _retry?: boolean;
+  skipAuth?: boolean;
 }
 
 function buildUrl(path: string, params?: RequestOptions["params"]): string {
@@ -55,9 +57,25 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { body, params, headers, ...init } = options;
+  const { body, params, headers, skipAuth, _retry, ...init } = options;
 
   const finalHeaders = new Headers(headers);
+
+  if (!skipAuth && typeof window !== "undefined") {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) {
+      finalHeaders.set("Authorization", `Bearer ${token}`);
+    } else {
+      const { getAuthSession } = await import("@/features/auth/lib/auth-session");
+      const local = getAuthSession();
+      if (local?.accessToken) {
+        finalHeaders.set("Authorization", `Bearer ${local.accessToken}`);
+      }
+    }
+  }
+
   if (body !== undefined && !(body instanceof FormData)) {
     finalHeaders.set("Content-Type", "application/json");
   }
