@@ -9,9 +9,16 @@ import type { Task } from "@/types/domain";
 interface SortableTaskCardProps {
   task: Task;
   onClick: () => void;
+  density?: "default" | "compact" | "tight";
+  fillHeight?: boolean;
 }
 
-export function SortableTaskCard({ task, onClick }: SortableTaskCardProps) {
+export function SortableTaskCard({
+  task,
+  onClick,
+  density,
+  fillHeight,
+}: SortableTaskCardProps) {
   const {
     attributes,
     listeners,
@@ -29,7 +36,12 @@ export function SortableTaskCard({ task, onClick }: SortableTaskCardProps) {
       {...attributes}
       {...listeners}
     >
-      <TaskCard task={task} onClick={onClick} />
+      <TaskCard
+        task={task}
+        density={density}
+        fillHeight={fillHeight}
+        onClick={onClick}
+      />
     </div>
   );
 }

@@ -29,7 +29,14 @@ export function KanbanColumn({
   onAdd,
   onOpenTask,
 }: KanbanColumnProps) {
+  function getDensity(taskCount: number): "default" | "compact" | "tight" {
+    if (taskCount >= 5) return "tight";
+    if (taskCount >= 3) return "compact";
+    return "default";
+  }
+
   const meta = TASK_STATUS_META[status];
+  const density = getDensity(tasks.length);
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: { type: "column", status },
@@ -38,8 +45,8 @@ export function KanbanColumn({
   return (
     <div
       className={cn(
-        "border-border bg-card/40 flex h-full flex-col rounded-2xl border transition-colors",
-        collapsed ? "w-14" : "w-80 shrink-0",
+        "border-border bg-card/40 flex h-full min-w-0 flex-col rounded-2xl border transition-colors",
+        collapsed ? "w-14" : "w-full",
         isOver && "border-primary/50 bg-primary/5",
       )}
     >
@@ -93,19 +100,30 @@ export function KanbanColumn({
       {!collapsed && (
         <div
           ref={setNodeRef}
-          className="flex-1 scrollbar-thin space-y-2 overflow-y-auto px-2 pb-2"
+          className="flex-1 overflow-hidden px-1.5 pb-1"
         >
           <SortableContext
             items={tasks.map((t) => t.id)}
             strategy={verticalListSortingStrategy}
           >
-            {tasks.map((task) => (
-              <SortableTaskCard
-                key={task.id}
-                task={task}
-                onClick={() => onOpenTask(task)}
-              />
-            ))}
+            {tasks.length > 0 ? (
+              <div
+                className="grid h-full gap-1"
+                style={{
+                  gridTemplateRows: `repeat(${tasks.length}, minmax(0, 1fr))`,
+                }}
+              >
+                {tasks.map((task) => (
+                  <SortableTaskCard
+                    key={task.id}
+                    task={task}
+                    density={density}
+                    fillHeight
+                    onClick={() => onOpenTask(task)}
+                  />
+                ))}
+              </div>
+            ) : null}
           </SortableContext>
 
           {tasks.length === 0 && (

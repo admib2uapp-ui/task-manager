@@ -34,7 +34,7 @@ export function ProjectBoard({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="h-[calc(100dvh-19rem)] min-h-[420px]">
+    <div className="h-full min-h-[420px]">
       <KanbanBoard
         projectId={projectId}
         tasks={tasks ?? []}

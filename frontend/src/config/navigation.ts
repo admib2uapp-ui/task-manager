@@ -10,6 +10,7 @@ import {
   ListChecks,
   Settings,
   Timer,
+  Users,
 } from "lucide-react";
 
 export interface NavItem {
@@ -37,6 +38,7 @@ export const navigation: NavSection[] = [
       },
       { title: "Projects", href: "/projects", icon: FolderKanban },
       { title: "My Tasks", href: "/tasks", icon: ListChecks },
+      { title: "Team Tasks", href: "/tasks/team", icon: Users },
       { title: "Calendar", href: "/calendar", icon: Calendar },
       { title: "Time Tracking", href: "/time-tracking", icon: Timer },
       { title: "Analytics", href: "/analytics", icon: BarChart3 },
