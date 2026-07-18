@@ -14,6 +14,7 @@ import type { Task, TaskStatus } from "@/types/domain";
 
 interface KanbanColumnProps {
   status: TaskStatus;
+  accentColor?: string;
   tasks: Task[];
   collapsed: boolean;
   onToggleCollapse: () => void;
@@ -23,6 +24,7 @@ interface KanbanColumnProps {
 
 export function KanbanColumn({
   status,
+  accentColor,
   tasks,
   collapsed,
   onToggleCollapse,
@@ -117,6 +119,7 @@ export function KanbanColumn({
                   <SortableTaskCard
                     key={task.id}
                     task={task}
+                    accentColor={accentColor}
                     density={density}
                     fillHeight
                     onClick={() => onOpenTask(task)}

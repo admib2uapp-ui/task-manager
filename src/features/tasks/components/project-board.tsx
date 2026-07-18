@@ -8,7 +8,13 @@ import { TaskDetailSheet } from "@/features/tasks/components/task-detail-sheet";
 import { useTasks } from "@/features/tasks/hooks/use-tasks";
 import type { Task, TaskStatus } from "@/types/domain";
 
-export function ProjectBoard({ projectId }: { projectId: string }) {
+export function ProjectBoard({
+  projectId,
+  projectColor,
+}: {
+  projectId: string;
+  projectColor?: string;
+}) {
   const { data: tasks, isLoading } = useTasks({ projectId });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -37,6 +43,7 @@ export function ProjectBoard({ projectId }: { projectId: string }) {
     <div className="h-full min-h-[420px]">
       <KanbanBoard
         projectId={projectId}
+        projectColor={projectColor}
         tasks={tasks ?? []}
         onOpenTask={openTask}
         onAddTask={addTask}

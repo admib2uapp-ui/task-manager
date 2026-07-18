@@ -189,7 +189,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         </TabsList>
 
         <TabsContent value="board" className="mt-6">
-          <ProjectBoard projectId={project.id} />
+          <ProjectBoard projectId={project.id} projectColor={project.color} />
         </TabsContent>
 
         <TabsContent value="overview" className="mt-6">

@@ -16,10 +16,12 @@ import {
   isDeadlineOverdue,
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { CSSProperties } from "react";
 import type { Task } from "@/types/domain";
 
 interface TaskCardProps {
   task: Task;
+  accentColor?: string;
   onClick?: () => void;
   dragging?: boolean;
   showProject?: boolean;
@@ -29,6 +31,7 @@ interface TaskCardProps {
 
 export function TaskCard({
   task,
+  accentColor,
   onClick,
   dragging,
   showProject,
@@ -44,6 +47,14 @@ export function TaskCard({
   const doneChecklist = checklist.filter((c) => c.completed).length;
   const commentCount = task.comments?.length ?? 0;
   const attachmentCount = task.attachments?.length ?? 0;
+  const projectAccent = accentColor ?? task.project?.color;
+  const cardStyle =
+    projectAccent != null
+      ? ({
+          "--task-accent-border": `color-mix(in srgb, ${projectAccent} 45%, var(--border))`,
+          "--task-accent-border-hover": `color-mix(in srgb, ${projectAccent} 72%, var(--border))`,
+        } as CSSProperties)
+      : undefined;
 
   const isOverdue = task.status !== "done" && isDeadlineOverdue(task.deadline);
 
@@ -51,8 +62,9 @@ export function TaskCard({
     return (
       <div
         onClick={onClick}
+        style={cardStyle}
         className={cn(
-          "group border-border bg-card shadow-soft hover:border-muted-foreground/30 cursor-pointer rounded-xl border overflow-hidden transition-all select-none",
+          "group bg-card shadow-soft cursor-pointer rounded-xl border overflow-hidden transition-all select-none [border-color:var(--task-accent-border,var(--border))] hover:[border-color:var(--task-accent-border-hover,var(--muted-foreground))]",
           "min-h-0 p-1",
           fillHeight && "h-full",
           dragging && "shadow-glow rotate-2 opacity-90",
@@ -97,8 +109,9 @@ export function TaskCard({
   return (
     <div
       onClick={onClick}
+      style={cardStyle}
       className={cn(
-        "group border-border bg-card shadow-soft hover:border-muted-foreground/30 cursor-pointer rounded-xl border overflow-hidden transition-all select-none",
+        "group bg-card shadow-soft cursor-pointer rounded-xl border overflow-hidden transition-all select-none [border-color:var(--task-accent-border,var(--border))] hover:[border-color:var(--task-accent-border-hover,var(--muted-foreground))]",
         tight ? "min-h-0 p-1.5" : compact ? "min-h-0 p-2" : "min-h-[120px] p-3",
         fillHeight && "h-full",
         dragging && "shadow-glow rotate-2 opacity-90",
