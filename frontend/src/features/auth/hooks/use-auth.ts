@@ -6,11 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { queryKeys } from "@/lib/query-keys";
-import { authApi, type AuthResponse } from "@/features/auth/api/auth-api";
-import { setAuthSession, clearAuthSession } from "@/features/auth/lib/auth-session";
+import { authApi } from "@/features/auth/api/auth-api";
 import { useAuthStore } from "@/features/auth/store/auth-store";
-import type { User } from "@/types/domain";
-
 export function useCurrentUser(enabled = true) {
   return useQuery({
     queryKey: queryKeys.auth.me,
@@ -29,23 +26,23 @@ export function useAuthListener() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event) => {
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          try {
-            const user = await authApi.syncUser();
-            setUser(user);
-            queryClient.setQueryData(queryKeys.auth.me, user);
-          } catch {
-            // Sync failed — session may be invalid
-          }
-        } else if (event === "SIGNED_OUT") {
-          reset();
-          queryClient.clear();
-          router.replace("/login");
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        try {
+          const user = await authApi.getUser();
+          setUser(user);
+          queryClient.setQueryData(queryKeys.auth.me, user);
+        } catch {
+          // ignore
         }
-      },
-    );
+      } else if (event === "SIGNED_OUT") {
+        reset();
+        queryClient.clear();
+        router.replace("/login");
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, [supabase, queryClient, setUser, reset, router]);
@@ -57,10 +54,21 @@ export function useLogin() {
   const setUser = useAuthStore((s) => s.setUser);
 
   return useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const res = await authApi.login(email, password);
-      setAuthSession({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-      return res.user;
+    mutationFn: async ({
+      email,
+      password,
+    }: {
+      email: string;
+      password: string;
+    }) => {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      const user = await authApi.getUser();
+      return user;
     },
     onSuccess: (user) => {
       setUser(user);
@@ -69,7 +77,9 @@ export function useLogin() {
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Unable to sign in. Please try again.";
+        error instanceof Error
+          ? error.message
+          : "Unable to sign in. Please try again.";
       toast.error(message);
     },
   });
@@ -90,9 +100,15 @@ export function useRegister() {
       email: string;
       password: string;
     }) => {
-      const res = await authApi.register(name, email, password);
-      setAuthSession({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-      return res.user;
+      const supabase = createClient();
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } },
+      });
+      if (error) throw error;
+      const user = await authApi.getUser();
+      return user;
     },
     onSuccess: (user) => {
       setUser(user);
@@ -101,7 +117,9 @@ export function useRegister() {
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Unable to create your account. Please try again.";
+        error instanceof Error
+          ? error.message
+          : "Unable to create your account. Please try again.";
       toast.error(message);
     },
   });
@@ -114,7 +132,8 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      clearAuthSession();
+      const supabase = createClient();
+      await supabase.auth.signOut();
     },
     onSettled: () => {
       reset();

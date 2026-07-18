@@ -79,17 +79,26 @@ function sortNodes(nodes: TreeNode[]): TreeNode[] {
 function getFileIcon(name: string) {
   const ext = name.split(".").pop()?.toLowerCase();
   const iconMap: Record<string, string> = {
-    tsx: "⚛️", jsx: "⚛️",
-    ts: "🔷", js: "🟨",
-    css: "🎨", scss: "🎨",
-    json: "📋", yaml: "📋", yml: "📋",
-    md: "📝", mdx: "📝",
-    svg: "🖼️", png: "🖼️", jpg: "🖼️",
+    tsx: "⚛️",
+    jsx: "⚛️",
+    ts: "🔷",
+    js: "🟨",
+    css: "🎨",
+    scss: "🎨",
+    json: "📋",
+    yaml: "📋",
+    yml: "📋",
+    md: "📝",
+    mdx: "📝",
+    svg: "🖼️",
+    png: "🖼️",
+    jpg: "🖼️",
     py: "🐍",
     go: "🔵",
     rs: "🦀",
     sql: "🗄️",
-    sh: "⚡", bash: "⚡",
+    sh: "⚡",
+    bash: "⚡",
   };
   return iconMap[ext ?? ""] ?? "📄";
 }
@@ -111,7 +120,9 @@ function FolderTreeItem({ node, depth }: FolderTreeItemProps) {
         title={node.path}
       >
         <span className="text-xs">{getFileIcon(node.name)}</span>
-        <span className="text-muted-foreground flex-1 truncate">{node.name}</span>
+        <span className="text-muted-foreground flex-1 truncate">
+          {node.name}
+        </span>
         {node.size > 0 && (
           <span className="text-muted-foreground/60 shrink-0 text-[10px]">
             {node.size < 1024
@@ -134,7 +145,7 @@ function FolderTreeItem({ node, depth }: FolderTreeItemProps) {
       >
         <ChevronRight
           className={cn(
-            "size-3.5 shrink-0 text-muted-foreground transition-transform",
+            "text-muted-foreground size-3.5 shrink-0 transition-transform",
             expanded && "rotate-90",
           )}
         />
@@ -148,7 +159,11 @@ function FolderTreeItem({ node, depth }: FolderTreeItemProps) {
       {expanded && (
         <div>
           {sorted.map((child) => (
-            <FolderTreeItem key={`${child.path}-${child.type}`} node={child} depth={depth + 1} />
+            <FolderTreeItem
+              key={`${child.path}-${child.type}`}
+              node={child}
+              depth={depth + 1}
+            />
           ))}
         </div>
       )}
@@ -176,7 +191,11 @@ export function FolderTree({ items, className }: FolderTreeProps) {
     <div className={cn("rounded-lg border", className)}>
       <div className="max-h-[600px] overflow-y-auto py-2">
         {tree.map((node) => (
-          <FolderTreeItem key={`${node.path}-${node.type}`} node={node} depth={0} />
+          <FolderTreeItem
+            key={`${node.path}-${node.type}`}
+            node={node}
+            depth={0}
+          />
         ))}
       </div>
     </div>

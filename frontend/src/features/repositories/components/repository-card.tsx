@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  GitBranch,
-  Loader2,
-  RefreshCw,
-  Star,
-  Trash2,
-} from "lucide-react";
+import { GitBranch, Loader2, RefreshCw, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -86,9 +80,7 @@ export function RepositoryCard({ connection }: RepositoryCardProps) {
                 </span>
               )}
               {connection.lastSyncedAt && (
-                <span>
-                  Scanned {formatRelative(connection.lastSyncedAt)}
-                </span>
+                <span>Scanned {formatRelative(connection.lastSyncedAt)}</span>
               )}
             </div>
           </div>
@@ -127,8 +119,7 @@ export function RepositoryCard({ connection }: RepositoryCardProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Disconnect repository?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the connection and all associated scan data
-              for{" "}
+              This will remove the connection and all associated scan data for{" "}
               <strong>
                 {connection.githubOwner}/{connection.githubRepo}
               </strong>

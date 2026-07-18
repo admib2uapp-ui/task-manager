@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { API_URL } from "@/lib/env";
+import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
   return (
@@ -22,8 +22,12 @@ function GithubIcon() {
   );
 }
 
-function oauthLogin(provider: string) {
-  window.location.href = `${API_URL}/auth/oauth/${provider}/login`;
+async function oauthLogin(provider: "google" | "github") {
+  const supabase = createClient();
+  await supabase.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: `${window.location.origin}/auth/callback` },
+  });
 }
 
 export function OAuthButtons() {

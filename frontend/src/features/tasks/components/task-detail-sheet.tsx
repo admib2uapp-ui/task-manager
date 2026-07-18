@@ -254,7 +254,9 @@ function TaskDetailBody({
               {/* Status + Priority */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-xs">Status</Label>
+                  <Label className="text-muted-foreground text-xs">
+                    Status
+                  </Label>
                   <Select
                     value={task.status}
                     onValueChange={(v) => patch({ status: v as TaskStatus })}
@@ -267,7 +269,9 @@ function TaskDetailBody({
                         <SelectItem key={s} value={s}>
                           <span
                             className="mr-1.5 inline-block size-2 rounded-full"
-                            style={{ backgroundColor: TASK_STATUS_META[s].color }}
+                            style={{
+                              backgroundColor: TASK_STATUS_META[s].color,
+                            }}
                           />
                           {TASK_STATUS_META[s].label}
                         </SelectItem>
@@ -276,10 +280,14 @@ function TaskDetailBody({
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-xs">Priority</Label>
+                  <Label className="text-muted-foreground text-xs">
+                    Priority
+                  </Label>
                   <Select
                     value={task.priority}
-                    onValueChange={(v) => patch({ priority: v as TaskPriority })}
+                    onValueChange={(v) =>
+                      patch({ priority: v as TaskPriority })
+                    }
                   >
                     <SelectTrigger className="h-9 w-full">
                       <SelectValue />
@@ -304,7 +312,9 @@ function TaskDetailBody({
               {/* Deadline + estimate */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-xs">Deadline</Label>
+                  <Label className="text-muted-foreground text-xs">
+                    Deadline
+                  </Label>
                   <Input
                     type="date"
                     className="h-9"
@@ -388,7 +398,9 @@ function TaskDetailBody({
 
               {/* Description */}
               <div className="space-y-1.5">
-                <Label className="text-muted-foreground text-xs">Description</Label>
+                <Label className="text-muted-foreground text-xs">
+                  Description
+                </Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -428,7 +440,9 @@ function TaskDetailBody({
                         {c.content}
                       </span>
                       <button
-                        onClick={() => mutations.deleteChecklistItem.mutate(c.id)}
+                        onClick={() =>
+                          mutations.deleteChecklistItem.mutate(c.id)
+                        }
                         className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
                       >
                         <X className="size-3.5" />
@@ -471,7 +485,9 @@ function TaskDetailBody({
                 {availableDeps.length > 0 && (
                   <Select
                     value=""
-                    onValueChange={(v) => v && mutations.addDependency.mutate(v)}
+                    onValueChange={(v) =>
+                      v && mutations.addDependency.mutate(v)
+                    }
                   >
                     <SelectTrigger className="h-8 w-full">
                       <SelectValue placeholder="Add dependency…" />
@@ -623,7 +639,9 @@ function TaskDetailBody({
                   <Button
                     size="icon"
                     className="size-9 shrink-0 rounded-xl"
-                    disabled={!newComment.trim() || mutations.addComment.isPending}
+                    disabled={
+                      !newComment.trim() || mutations.addComment.isPending
+                    }
                     onClick={() => {
                       mutations.addComment.mutate(newComment.trim());
                       setNewComment("");
@@ -663,7 +681,9 @@ function TaskDetailBody({
                     variant="outline"
                     size="sm"
                     className="h-8 shrink-0 gap-1.5 rounded-lg px-3"
-                    disabled={!newSubtask.trim() || mutations.addSubtask.isPending}
+                    disabled={
+                      !newSubtask.trim() || mutations.addSubtask.isPending
+                    }
                     onClick={() => {
                       if (!newSubtask.trim()) return;
                       mutations.addSubtask.mutate(newSubtask.trim());
@@ -722,7 +742,6 @@ function TaskDetailBody({
           </Tabs>
         </div>
       </ScrollArea>
-
     </div>
   );
 }

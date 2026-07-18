@@ -6,7 +6,9 @@ export interface AuthSession {
 const STORAGE_KEY = "orbit.auth.session";
 
 function canUseStorage(): boolean {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+  return (
+    typeof window !== "undefined" && typeof window.localStorage !== "undefined"
+  );
 }
 
 export function getAuthSession(): AuthSession | null {

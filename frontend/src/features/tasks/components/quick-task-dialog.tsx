@@ -129,7 +129,9 @@ export function QuickTaskDialog({
                 <SelectTrigger className="h-9 w-full">
                   <SelectValue
                     placeholder={
-                      projectsLoading ? "Loading projects..." : "Select a project"
+                      projectsLoading
+                        ? "Loading projects..."
+                        : "Select a project"
                     }
                   />
                 </SelectTrigger>
@@ -160,15 +162,20 @@ export function QuickTaskDialog({
                   Could not load projects. Refresh and try again.
                 </p>
               )}
-              {!projectsLoading && !projectsLoadError && projects.length === 0 && (
-                <p className="text-muted-foreground text-xs">
-                  No projects found. Create one in{" "}
-                  <Link href="/projects" className="underline underline-offset-2">
-                    Projects
-                  </Link>
-                  .
-                </p>
-              )}
+              {!projectsLoading &&
+                !projectsLoadError &&
+                projects.length === 0 && (
+                  <p className="text-muted-foreground text-xs">
+                    No projects found. Create one in{" "}
+                    <Link
+                      href="/projects"
+                      className="underline underline-offset-2"
+                    >
+                      Projects
+                    </Link>
+                    .
+                  </p>
+                )}
             </div>
           )}
 
