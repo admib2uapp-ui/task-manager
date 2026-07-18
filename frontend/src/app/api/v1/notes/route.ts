@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getRouteContext, unauthorized } from "@/lib/supabase/route-handler";
+import {
+  getRouteContext,
+  unauthorized,
+  insertAuditLog,
+} from "@/lib/supabase/route-handler";
 
 export async function GET() {
   try {
@@ -8,11 +12,22 @@ export async function GET() {
 
     const { data } = await supabaseAdmin
       .from("notes")
-      .select("id, workspace_id, project_id, title, created_at, updated_at")
+      .select("id, workspace_id, project_id, title, created_by, updated_by, created_at, updated_at")
       .eq("workspace_id", workspace.id)
       .order("updated_at", { ascending: false });
 
-    return NextResponse.json(data || []);
+    const notes = (data || []).map((n: Record<string, unknown>) => ({
+      id: n.id,
+      workspaceId: n.workspace_id,
+      projectId: n.project_id,
+      title: n.title,
+      createdBy: n.created_by,
+      updatedBy: n.updated_by,
+      createdAt: n.created_at,
+      updatedAt: n.updated_at,
+    }));
+
+    return NextResponse.json(notes);
   } catch {
     return unauthorized();
   }
@@ -20,7 +35,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const body = await request.json();
 
     const { data, error } = await supabaseAdmin
@@ -30,12 +45,21 @@ export async function POST(request: Request) {
         project_id: body.projectId || null,
         title: body.title || "Untitled",
         content: body.content || "",
+        created_by: user.id,
       })
       .select()
       .single();
 
     if (error)
       return NextResponse.json({ detail: error.message }, { status: 400 });
+
+    await insertAuditLog({
+      userId: user.id,
+      action: "CREATE_NOTE",
+      entityType: "Note",
+      entityId: data.id,
+    });
+
     return NextResponse.json(data, { status: 201 });
   } catch {
     return unauthorized();

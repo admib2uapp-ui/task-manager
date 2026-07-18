@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getRouteContext, unauthorized } from "@/lib/supabase/route-handler";
+import {
+  getRouteContext,
+  unauthorized,
+  insertAuditLog,
+} from "@/lib/supabase/route-handler";
 
 export async function GET(
   _request: Request,
@@ -27,7 +31,7 @@ export async function POST(
   { params }: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    await getRouteContext();
+    const { user } = await getRouteContext();
     const { projectId } = await params;
     const body = await request.json();
 
@@ -48,12 +52,21 @@ export async function POST(
         description: body.description || null,
         due_date: body.dueDate || null,
         position: nextPos,
+        created_by: user.id,
       })
       .select()
       .single();
 
     if (error)
       return NextResponse.json({ detail: error.message }, { status: 400 });
+
+    await insertAuditLog({
+      userId: user.id,
+      action: "CREATE_MILESTONE",
+      entityType: "Milestone",
+      entityId: data.id,
+    });
+
     return NextResponse.json(data, { status: 201 });
   } catch {
     return unauthorized();

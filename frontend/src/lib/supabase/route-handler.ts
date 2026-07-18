@@ -24,6 +24,45 @@ function mapSupabaseUser(authUser: {
   };
 }
 
+export function forbidden(message = "You do not have permission") {
+  return NextResponse.json({ detail: message }, { status: 403 });
+}
+
+export async function requireOwnership(
+  createdBy: string | null | undefined,
+  userId: string,
+  workspaceId: string,
+): Promise<NextResponse | null> {
+  if (createdBy === userId) return null;
+
+  const { data: membership } = await supabaseAdmin
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (membership?.role === "owner" || membership?.role === "admin") return null;
+
+  return forbidden("You do not have permission to modify this resource");
+}
+
+export async function insertAuditLog(args: {
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  details?: Record<string, unknown>;
+}) {
+  await supabaseAdmin.from("audit_logs").insert({
+    user_id: args.userId,
+    action: args.action,
+    entity_type: args.entityType,
+    entity_id: args.entityId || null,
+    details: args.details || null,
+  });
+}
+
 export function unauthorized() {
   return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
 }

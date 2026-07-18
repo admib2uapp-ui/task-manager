@@ -4,6 +4,8 @@ import {
   getRouteContext,
   unauthorized,
   notFound,
+  requireOwnership,
+  insertAuditLog,
 } from "@/lib/supabase/route-handler";
 
 export async function GET(
@@ -80,9 +82,23 @@ export async function PATCH(
   { params }: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { projectId } = await params;
     const body = await request.json();
+
+    const { data: existing } = await supabaseAdmin
+      .from("projects")
+      .select("created_by")
+      .eq("id", projectId)
+      .eq("workspace_id", workspace.id)
+      .single();
+
+    if (!existing) return notFound("Project");
+
+    const ownershipError = await requireOwnership(
+      existing.created_by, user.id, workspace.id,
+    );
+    if (ownershipError) return ownershipError;
 
     const updates: Record<string, unknown> = {};
     if (body.name !== undefined) updates.name = body.name;
@@ -93,6 +109,7 @@ export async function PATCH(
     if (body.deadline !== undefined) updates.deadline = body.deadline;
     if (body.isFavorite !== undefined) updates.is_favorite = body.isFavorite;
     if (body.isArchived !== undefined) updates.is_archived = body.isArchived;
+    updates.updated_by = user.id;
 
     const { data, error } = await supabaseAdmin
       .from("projects")
@@ -106,6 +123,14 @@ export async function PATCH(
       return NextResponse.json({ detail: error.message }, { status: 400 });
     if (!data) return notFound("Project");
 
+    await insertAuditLog({
+      userId: user.id,
+      action: "UPDATE_PROJECT",
+      entityType: "Project",
+      entityId: projectId,
+      details: { changes: Object.keys(updates).filter((k) => k !== "updated_by") },
+    });
+
     return NextResponse.json(data);
   } catch {
     return unauthorized();
@@ -117,8 +142,29 @@ export async function DELETE(
   { params }: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { projectId } = await params;
+
+    const { data: existing } = await supabaseAdmin
+      .from("projects")
+      .select("created_by")
+      .eq("id", projectId)
+      .eq("workspace_id", workspace.id)
+      .single();
+
+    if (!existing) return notFound("Project");
+
+    const ownershipError = await requireOwnership(
+      existing.created_by, user.id, workspace.id,
+    );
+    if (ownershipError) return ownershipError;
+
+    await insertAuditLog({
+      userId: user.id,
+      action: "DELETE_PROJECT",
+      entityType: "Project",
+      entityId: projectId,
+    });
 
     await supabaseAdmin.from("tasks").delete().eq("project_id", projectId);
 

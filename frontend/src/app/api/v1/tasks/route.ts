@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getRouteContext, unauthorized } from "@/lib/supabase/route-handler";
+import { getRouteContext, unauthorized, insertAuditLog } from "@/lib/supabase/route-handler";
 
 export async function GET(request: Request) {
   try {
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await getRouteContext();
+    const { user } = await getRouteContext();
     const body = await request.json();
 
     const { data: maxPos } = await supabaseAdmin
@@ -80,6 +80,7 @@ export async function POST(request: Request) {
         assignee_id: body.assigneeId || null,
         deadline: body.deadline || null,
         estimated_hours: body.estimatedHours || null,
+        created_by: user.id,
       })
       .select()
       .single();
@@ -95,6 +96,13 @@ export async function POST(request: Request) {
         })),
       );
     }
+
+    await insertAuditLog({
+      userId: user.id,
+      action: "CREATE_TASK",
+      entityType: "Task",
+      entityId: data.id,
+    });
 
     return NextResponse.json(data, { status: 201 });
   } catch {

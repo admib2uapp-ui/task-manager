@@ -64,7 +64,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const body = await request.json();
 
     const { data, error } = await supabaseAdmin
@@ -78,6 +78,7 @@ export async function POST(request: Request) {
         status: body.status || "active",
         deadline: body.deadline || null,
         is_favorite: body.isFavorite || false,
+        created_by: user.id,
       })
       .select()
       .single();

@@ -4,6 +4,8 @@ import {
   getRouteContext,
   unauthorized,
   notFound,
+  requireOwnership,
+  insertAuditLog,
 } from "@/lib/supabase/route-handler";
 
 export async function GET(
@@ -75,9 +77,22 @@ export async function PATCH(
   { params }: { params: Promise<{ taskId: string }> },
 ) {
   try {
-    await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { taskId } = await params;
     const body = await request.json();
+
+    const { data: existing } = await supabaseAdmin
+      .from("tasks")
+      .select("created_by, project:projects(workspace_id)")
+      .eq("id", taskId)
+      .single();
+
+    if (!existing) return notFound("Task");
+
+    const ownershipError = await requireOwnership(
+      existing.created_by, user.id, workspace.id,
+    );
+    if (ownershipError) return ownershipError;
 
     const updates: Record<string, unknown> = {};
     if (body.title !== undefined) updates.title = body.title;
@@ -90,6 +105,7 @@ export async function PATCH(
     if (body.estimatedHours !== undefined)
       updates.estimated_hours = body.estimatedHours;
     if (body.isPinned !== undefined) updates.is_pinned = body.isPinned;
+    updates.updated_by = user.id;
 
     if (body.tagIds !== undefined) {
       await supabaseAdmin.from("task_tags").delete().eq("task_id", taskId);
@@ -120,6 +136,14 @@ export async function PATCH(
       return NextResponse.json({ detail: error.message }, { status: 400 });
     if (!data) return notFound("Task");
 
+    await insertAuditLog({
+      userId: user.id,
+      action: "UPDATE_TASK",
+      entityType: "Task",
+      entityId: taskId,
+      details: { changes: Object.keys(updates).filter((k) => k !== "updated_by") },
+    });
+
     return NextResponse.json({
       ...data,
       tags: (data.tags || []).map((t: Record<string, unknown>) => t.tag),
@@ -134,8 +158,28 @@ export async function DELETE(
   { params }: { params: Promise<{ taskId: string }> },
 ) {
   try {
-    await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { taskId } = await params;
+
+    const { data: existing } = await supabaseAdmin
+      .from("tasks")
+      .select("created_by")
+      .eq("id", taskId)
+      .single();
+
+    if (!existing) return notFound("Task");
+
+    const ownershipError = await requireOwnership(
+      existing.created_by, user.id, workspace.id,
+    );
+    if (ownershipError) return ownershipError;
+
+    await insertAuditLog({
+      userId: user.id,
+      action: "DELETE_TASK",
+      entityType: "Task",
+      entityId: taskId,
+    });
 
     await supabaseAdmin.from("subtasks").delete().eq("task_id", taskId);
     await supabaseAdmin.from("checklist_items").delete().eq("task_id", taskId);
