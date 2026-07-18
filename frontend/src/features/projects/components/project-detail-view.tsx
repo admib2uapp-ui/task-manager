@@ -84,7 +84,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const statusMeta = PROJECT_STATUS_META[project.status];
 
   return (
-    <PageContainer>
+    <PageContainer className="flex flex-col h-full">
       <Link
         href="/projects"
         className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1.5 text-sm transition-colors"

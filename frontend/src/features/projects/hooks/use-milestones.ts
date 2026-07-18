@@ -9,6 +9,7 @@ import {
   type MilestonePayload,
   type MilestoneUpdatePayload,
 } from "@/features/projects/api/projects-api";
+import type { Milestone } from "@/types/domain";
 
 const milestonesKey = (projectId: string) =>
   ["projects", "detail", projectId, "milestones"] as const;
@@ -21,7 +22,6 @@ function invalidate(
   queryClient.invalidateQueries({
     queryKey: queryKeys.projects.detail(projectId),
   });
-  queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
 }
 
 export function useMilestones(projectId: string) {
@@ -67,15 +67,31 @@ export function useUpdateMilestone(projectId: string) {
 
 export function useDeleteMilestone(projectId: string) {
   const queryClient = useQueryClient();
+  const listKey = milestonesKey(projectId);
   return useMutation({
     mutationFn: (milestoneId: string) =>
       projectsApi.deleteMilestone(projectId, milestoneId),
-    onSuccess: () => invalidate(queryClient, projectId),
-    onError: (error) =>
+    onMutate: async (milestoneId) => {
+      await queryClient.cancelQueries({ queryKey: listKey });
+      const previous = queryClient.getQueryData<Milestone[]>(listKey);
+      queryClient.setQueryData<Milestone[]>(
+        listKey,
+        (old) => old?.filter((m) => m.id !== milestoneId) ?? [],
+      );
+      return { previous };
+    },
+    onError: (error, _milestoneId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(listKey, context.previous);
+      }
       toast.error(
         error instanceof ApiError
           ? error.message
           : "Could not delete milestone",
-      ),
+      );
+    },
+    onSettled: () => {
+      invalidate(queryClient, projectId);
+    },
   });
 }

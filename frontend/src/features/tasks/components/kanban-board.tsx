@@ -202,7 +202,7 @@ export function KanbanBoard({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-full scrollbar-thin gap-4 overflow-x-auto pb-2">
+      <div className="grid h-full grid-cols-1 gap-4 pb-2 md:grid-cols-2 xl:grid-cols-5">
         {KANBAN_COLUMNS.map((status) => (
           <KanbanColumn
             key={status}

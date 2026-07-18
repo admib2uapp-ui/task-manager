@@ -23,6 +23,8 @@ interface TaskCardProps {
   onClick?: () => void;
   dragging?: boolean;
   showProject?: boolean;
+  density?: "default" | "compact" | "tight";
+  fillHeight?: boolean;
 }
 
 export function TaskCard({
@@ -30,7 +32,11 @@ export function TaskCard({
   onClick,
   dragging,
   showProject,
+  density = "default",
+  fillHeight = false,
 }: TaskCardProps) {
+  const compact = density !== "default";
+  const tight = density === "tight";
   const priority = TASK_PRIORITY_META[task.priority];
   const subtasks = task.subtasks ?? [];
   const doneSubtasks = subtasks.filter((s) => s.completed).length;
@@ -41,17 +47,69 @@ export function TaskCard({
 
   const isOverdue = task.status !== "done" && isDeadlineOverdue(task.deadline);
 
+  if (tight) {
+    return (
+      <div
+        onClick={onClick}
+        className={cn(
+          "group border-border bg-card shadow-soft hover:border-muted-foreground/30 cursor-pointer rounded-xl border overflow-hidden transition-all select-none",
+          "min-h-0 p-1",
+          fillHeight && "h-full",
+          dragging && "shadow-glow rotate-2 opacity-90",
+        )}
+      >
+        <div className="flex h-full min-w-0 items-center gap-1.5">
+          <span
+            className="rounded px-1 py-0.5 text-[8px] font-semibold tracking-wide uppercase"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${priority.color} 16%, transparent)`,
+              color: priority.color,
+            }}
+          >
+            {priority.label}
+          </span>
+
+          <p className="flex-1 truncate text-[11px] leading-tight font-medium">
+            {task.title}
+          </p>
+
+          {task.deadline && (
+            <CalendarClock
+              className={cn("size-3 shrink-0", isOverdue && "text-danger")}
+            />
+          )}
+
+          {task.assignee && (
+            <Avatar className="size-4 shrink-0">
+              {task.assignee.avatarUrl && (
+                <AvatarImage src={task.assignee.avatarUrl} />
+              )}
+              <AvatarFallback className="bg-primary/15 text-primary text-[8px]">
+                {getInitials(task.assignee.name)}
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={onClick}
       className={cn(
-        "group border-border bg-card shadow-soft hover:border-muted-foreground/30 cursor-pointer rounded-xl border p-3 transition-all select-none",
+        "group border-border bg-card shadow-soft hover:border-muted-foreground/30 cursor-pointer rounded-xl border overflow-hidden transition-all select-none",
+        tight ? "min-h-0 p-1.5" : compact ? "min-h-0 p-2" : "min-h-[120px] p-3",
+        fillHeight && "h-full",
         dragging && "shadow-glow rotate-2 opacity-90",
       )}
     >
-      <div className="mb-2 flex items-center gap-2">
+      <div className={cn("flex items-center gap-2", compact ? "mb-1" : "mb-2")}>
         <span
-          className="rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase"
+          className={cn(
+            "rounded px-1.5 py-0.5 font-semibold tracking-wide uppercase",
+            tight ? "text-[9px]" : "text-[10px]",
+          )}
           style={{
             backgroundColor: `color-mix(in srgb, ${priority.color} 16%, transparent)`,
             color: priority.color,
@@ -70,12 +128,12 @@ export function TaskCard({
         )}
       </div>
 
-      <p className="line-clamp-2 text-sm leading-snug font-medium">
+      <p className={cn("leading-snug font-medium", tight ? "line-clamp-1 text-xs" : compact ? "line-clamp-2 text-xs" : "line-clamp-2 text-sm")}>
         {task.title}
       </p>
 
-      {task.tags.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
+      {!tight && task.tags.length > 0 && (
+        <div className={cn("flex flex-wrap gap-1", compact ? "mt-1" : "mt-2")}>
           {task.tags.slice(0, 3).map((tag) => (
             <span
               key={tag.id}
@@ -91,27 +149,32 @@ export function TaskCard({
         </div>
       )}
 
-      <div className="text-muted-foreground mt-3 flex items-center justify-between gap-2 text-xs">
+      <div
+        className={cn(
+          "text-muted-foreground flex items-center justify-between gap-2 text-xs",
+          tight ? "mt-0.5" : compact ? "mt-1" : "mt-3",
+        )}
+      >
         <div className="flex items-center gap-2.5">
-          {subtasks.length > 0 && (
+          {!tight && subtasks.length > 0 && (
             <span className="inline-flex items-center gap-1">
               <ListTree className="size-3.5" />
               {doneSubtasks}/{subtasks.length}
             </span>
           )}
-          {checklist.length > 0 && (
+          {!tight && checklist.length > 0 && (
             <span className="inline-flex items-center gap-1">
               <CheckSquare className="size-3.5" />
               {doneChecklist}/{checklist.length}
             </span>
           )}
-          {commentCount > 0 && (
+          {!tight && commentCount > 0 && (
             <span className="inline-flex items-center gap-1">
               <MessageSquare className="size-3.5" />
               {commentCount}
             </span>
           )}
-          {attachmentCount > 0 && (
+          {!tight && attachmentCount > 0 && (
             <span className="inline-flex items-center gap-1">
               <Paperclip className="size-3.5" />
               {attachmentCount}
@@ -129,7 +192,7 @@ export function TaskCard({
               )}
             >
               <CalendarClock className="size-3.5" />
-              {formatDeadlineDate(task.deadline, "MMM d")}
+              {!tight && formatDeadlineDate(task.deadline, "MMM d")}
             </span>
           )}
           {task.assignee && (
