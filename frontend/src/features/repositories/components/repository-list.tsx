@@ -58,10 +58,7 @@ export function RepositoryList() {
         />
       )}
 
-      <RepositoryConnectDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      />
+      <RepositoryConnectDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </PageContainer>
   );
 }

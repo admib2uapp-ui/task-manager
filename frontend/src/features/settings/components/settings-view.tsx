@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { useAuthStore } from "@/features/auth/store/auth-store";
+import { authApi } from "@/features/auth/api/auth-api";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -53,11 +55,15 @@ export function SettingsView() {
   });
 
   const updateProfile = useMutation({
-    mutationFn: async (_values: ProfileValues) =>
-      // Profile update disabled — auth removed
-      undefined,
-    onSuccess: () => {},
-    onError: () => {},
+    mutationFn: async (values: ProfileValues) => authApi.updateProfile(values),
+    onSuccess: () => {
+      toast.success("Profile updated");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update profile",
+      );
+    },
   });
 
   return (

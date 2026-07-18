@@ -22,11 +22,13 @@ import {
 import { TaskCard } from "@/features/tasks/components/task-card";
 import { TaskDetailSheet } from "@/features/tasks/components/task-detail-sheet";
 import { useTasks } from "@/features/tasks/hooks/use-tasks";
+import { useAuthStore } from "@/features/auth/store/auth-store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { TASK_PRIORITY } from "@/types/domain";
 import type { Task, TaskPriority } from "@/types/domain";
 
 export function MyTasksView() {
+  const currentUser = useAuthStore((s) => s.user);
   const [search, setSearch] = useState("");
   const [priority, setPriority] = useState<TaskPriority | "all">("all");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -36,6 +38,7 @@ export function MyTasksView() {
   const { data: tasks, isLoading } = useTasks({
     search: debouncedSearch || undefined,
     priority: priority === "all" ? undefined : priority,
+    assigneeId: currentUser?.id,
   });
 
   const grouped = useMemo(() => {

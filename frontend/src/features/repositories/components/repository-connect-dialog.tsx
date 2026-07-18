@@ -79,7 +79,7 @@ export function RepositoryConnectDialog({
         {step === "repo" ? (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">
+              <Label className="text-muted-foreground text-xs">
                 Repository
               </Label>
               <div className="flex items-center gap-1.5">
@@ -100,7 +100,7 @@ export function RepositoryConnectDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">
+              <Label className="text-muted-foreground text-xs">
                 Link to project (optional)
               </Label>
               <Select value={projectId} onValueChange={setProjectId}>
@@ -131,7 +131,7 @@ export function RepositoryConnectDialog({
         ) : (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">
+              <Label className="text-muted-foreground text-xs">
                 GitHub Personal Access Token
               </Label>
               <Input
@@ -142,16 +142,13 @@ export function RepositoryConnectDialog({
                 className="h-10 font-mono text-sm"
               />
               <p className="text-muted-foreground text-[11px]">
-                Create a fine-grained token with <strong>repo</strong> scope
-                at GitHub Developer Settings.
+                Create a fine-grained token with <strong>repo</strong> scope at
+                GitHub Developer Settings.
               </p>
             </div>
 
             <DialogFooter className="flex gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => setStep("repo")}
-              >
+              <Button variant="ghost" onClick={() => setStep("repo")}>
                 Back
               </Button>
               <Button

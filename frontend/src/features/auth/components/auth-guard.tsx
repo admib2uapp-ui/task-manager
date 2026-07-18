@@ -4,10 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { FullScreenLoader } from "@/components/shared/full-screen-loader";
 import { createClient } from "@/lib/supabase/client";
-import { ApiError } from "@/lib/api-client";
 import { useCurrentUser } from "@/features/auth/hooks/use-auth";
 import { useAuthStore } from "@/features/auth/store/auth-store";
-import { getAuthSession } from "@/features/auth/lib/auth-session";
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -21,13 +19,11 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     setMounted(true);
     const supabase = createClient();
     supabase.auth.getSession().then(({ data }) => {
-      const supabaseToken = Boolean(data.session?.access_token);
-      const localToken = Boolean(getAuthSession()?.accessToken);
-      setHasSession(supabaseToken || localToken);
+      setHasSession(Boolean(data.session?.access_token));
     });
   }, []);
 
-  const { data, error, isError, isLoading } = useCurrentUser(hasSession === true);
+  const { data, isError, isLoading } = useCurrentUser(hasSession === true);
 
   useEffect(() => {
     if (mounted && hasSession === false) {
@@ -46,7 +42,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       reset();
       router.replace("/login");
     }
-  }, [error, isError, reset, router]);
+  }, [isError, reset, router]);
 
   if (!mounted || hasSession === null || isLoading || !user) {
     return <FullScreenLoader label="Preparing your workspace…" />;

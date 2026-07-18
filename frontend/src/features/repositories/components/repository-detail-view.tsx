@@ -24,12 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FolderTree as FolderTreeComponent } from "@/features/repositories/components/folder-tree";
 import {
   repoQueryKeys,
@@ -76,7 +71,9 @@ interface RepositoryDetailViewProps {
   connectionId: string;
 }
 
-export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps) {
+export function RepositoryDetailView({
+  connectionId,
+}: RepositoryDetailViewProps) {
   const { data: conn, isLoading: connLoading } = useRepository(connectionId);
   const { data: languages } = useRepoLanguages(connectionId);
   const { data: scans } = useRepositoryScans(connectionId);
@@ -92,14 +89,19 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
   const latestScan = scans?.[0];
 
   useEffect(() => {
-    if (
-      latestScan?.status === "completed" ||
-      latestScan?.status === "failed"
-    ) {
-      queryClient.invalidateQueries({ queryKey: repoQueryKeys.issues(connectionId) });
-      queryClient.invalidateQueries({ queryKey: repoQueryKeys.reports(connectionId) });
-      queryClient.invalidateQueries({ queryKey: repoQueryKeys.score(connectionId) });
-      queryClient.invalidateQueries({ queryKey: repoQueryKeys.fileTree(connectionId) });
+    if (latestScan?.status === "completed" || latestScan?.status === "failed") {
+      queryClient.invalidateQueries({
+        queryKey: repoQueryKeys.issues(connectionId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: repoQueryKeys.reports(connectionId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: repoQueryKeys.score(connectionId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: repoQueryKeys.fileTree(connectionId),
+      });
     }
   }, [latestScan?.status, connectionId, queryClient]);
 
@@ -134,7 +136,8 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
   const stars = (meta?.stars as number) ?? 0;
   const description = (meta?.description as string) ?? null;
   const isPrivate = (meta?.isPrivate as boolean) ?? false;
-  const isScanning = latestScan?.status === "pending" || latestScan?.status === "running";
+  const isScanning =
+    latestScan?.status === "pending" || latestScan?.status === "running";
 
   const filteredIssues = issueFilter
     ? (issues ?? []).filter((i) => i.severity === issueFilter)
@@ -164,7 +167,7 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
                 "shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
                 isPrivate
                   ? "bg-muted text-muted-foreground border-border"
-                  : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
               )}
             >
               {isPrivate ? "Private" : "Public"}
@@ -176,9 +179,7 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
         </div>
         <Button
           className="gap-1.5 rounded-xl"
-          onClick={() =>
-            triggerScan.mutate({ connectionId })
-          }
+          onClick={() => triggerScan.mutate({ connectionId })}
           disabled={triggerScan.isPending || isScanning}
         >
           {triggerScan.isPending || isScanning ? (
@@ -197,7 +198,8 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
             <div>
               <p className="text-sm font-medium">Scan in progress...</p>
               <p className="text-muted-foreground text-xs">
-                Fetching files and running AI analysis. This may take a few minutes.
+                Fetching files and running AI analysis. This may take a few
+                minutes.
               </p>
             </div>
           </CardContent>
@@ -209,11 +211,12 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
           <CardContent className="flex items-start gap-3 p-4">
             <AlertTriangle className="text-destructive mt-0.5 size-5 shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-medium text-destructive">
+              <p className="text-destructive text-sm font-medium">
                 Scan failed
               </p>
               <p className="text-muted-foreground mt-1 text-xs break-all">
-                {latestScan.errorMessage || "Unknown error. Check the backend terminal for details."}
+                {latestScan.errorMessage ||
+                  "Unknown error. Check the backend terminal for details."}
               </p>
             </div>
           </CardContent>
@@ -223,7 +226,7 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="rounded-xl">
           <CardContent className="flex items-center gap-3 p-3">
-            <Star className="text-amber-500 size-4" />
+            <Star className="size-4 text-amber-500" />
             <div>
               <p className="text-lg font-semibold tabular-nums">{stars}</p>
               <p className="text-muted-foreground text-[10px]">Stars</p>
@@ -232,7 +235,7 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
         </Card>
         <Card className="rounded-xl">
           <CardContent className="flex items-center gap-3 p-3">
-            <FileCode className="text-blue-400 size-4" />
+            <FileCode className="size-4 text-blue-400" />
             <div>
               <p className="text-lg font-semibold tabular-nums">
                 {fileTree?.length ?? "-"}
@@ -243,7 +246,7 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
         </Card>
         <Card className="rounded-xl">
           <CardContent className="flex items-center gap-3 p-3">
-            <Bug className="text-red-400 size-4" />
+            <Bug className="size-4 text-red-400" />
             <div>
               <p className="text-lg font-semibold tabular-nums">
                 {issues?.length ?? "-"}
@@ -254,7 +257,7 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
         </Card>
         <Card className="rounded-xl">
           <CardContent className="flex items-center gap-3 p-3">
-            <Sparkles className="text-purple-400 size-4" />
+            <Sparkles className="size-4 text-purple-400" />
             <div>
               <p className="text-lg font-semibold tabular-nums">
                 {aiReports.length || "-"}
@@ -300,7 +303,10 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
                 <ScoreBar label="Performance" value={score.performance} />
                 <ScoreBar label="Testing" value={score.testing} />
                 <ScoreBar label="Documentation" value={score.documentation} />
-                <ScoreBar label="Maintainability" value={score.maintainability} />
+                <ScoreBar
+                  label="Maintainability"
+                  value={score.maintainability}
+                />
                 <ScoreBar label="Tech Debt" value={score.technicalDebt} />
                 <ScoreBar label="Complexity" value={score.complexity} />
                 <ScoreBar label="DX Score" value={score.dxScore} />
@@ -312,27 +318,39 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
             <Card className="rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Sparkles className="text-purple-400 size-4" />
+                  <Sparkles className="size-4 text-purple-400" />
                   AI Project Analysis
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   <ReactMarkdown>
-                    {String((execReport.scores as Record<string, unknown>).description ?? execReport.summary ?? "")}
+                    {String(
+                      (execReport.scores as Record<string, unknown>)
+                        .description ??
+                        execReport.summary ??
+                        "",
+                    )}
                   </ReactMarkdown>
                 </div>
 
-                {Boolean((execReport.scores as Record<string, unknown>).techStack) && (
+                {Boolean(
+                  (execReport.scores as Record<string, unknown>).techStack,
+                ) && (
                   <div>
-                    <h4 className="mb-2 text-xs font-medium text-muted-foreground">
+                    <h4 className="text-muted-foreground mb-2 text-xs font-medium">
                       Tech Stack
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {(
-                        (execReport.scores as Record<string, unknown>).techStack as string[]
+                        (execReport.scores as Record<string, unknown>)
+                          .techStack as string[]
                       )?.map((tech: string) => (
-                        <Badge key={tech} variant="secondary" className="text-[10px]">
+                        <Badge
+                          key={tech}
+                          variant="secondary"
+                          className="text-[10px]"
+                        >
                           {tech}
                         </Badge>
                       ))}
@@ -340,12 +358,17 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
                   </div>
                 )}
 
-                {Boolean((execReport.scores as Record<string, unknown>).strengths) && (
+                {Boolean(
+                  (execReport.scores as Record<string, unknown>).strengths,
+                ) && (
                   <div>
-                    <h4 className="text-success mb-2 text-xs font-medium">Strengths</h4>
+                    <h4 className="text-success mb-2 text-xs font-medium">
+                      Strengths
+                    </h4>
                     <ul className="text-muted-foreground ml-4 list-disc space-y-1 text-xs">
                       {(
-                        (execReport.scores as Record<string, unknown>).strengths as string[]
+                        (execReport.scores as Record<string, unknown>)
+                          .strengths as string[]
                       )?.map((s: string, i: number) => (
                         <li key={i}>{s}</li>
                       ))}
@@ -353,14 +376,17 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
                   </div>
                 )}
 
-                {Boolean((execReport.scores as Record<string, unknown>).weaknesses) && (
+                {Boolean(
+                  (execReport.scores as Record<string, unknown>).weaknesses,
+                ) && (
                   <div>
                     <h4 className="text-destructive mb-2 text-xs font-medium">
                       Areas to Improve
                     </h4>
                     <ul className="text-muted-foreground ml-4 list-disc space-y-1 text-xs">
                       {(
-                        (execReport.scores as Record<string, unknown>).weaknesses as string[]
+                        (execReport.scores as Record<string, unknown>)
+                          .weaknesses as string[]
                       )?.map((w: string, i: number) => (
                         <li key={i}>{w}</li>
                       ))}
@@ -378,8 +404,8 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
                 <div>
                   <p className="font-medium">No AI analysis yet</p>
                   <p className="text-muted-foreground mt-1 text-sm">
-                    Click &quot;Scan &amp; Analyze&quot; to generate AI-powered insights
-                    about this repository.
+                    Click &quot;Scan &amp; Analyze&quot; to generate AI-powered
+                    insights about this repository.
                   </p>
                 </div>
               </CardContent>
@@ -448,17 +474,20 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5">
-                          {issue.issueType === "bug" || issue.issueType === "security" ? (
+                          {issue.issueType === "bug" ||
+                          issue.issueType === "security" ? (
                             <Shield className="text-destructive size-4" />
                           ) : issue.issueType === "performance" ? (
-                            <Zap className="text-yellow-400 size-4" />
+                            <Zap className="size-4 text-yellow-400" />
                           ) : (
                             <AlertTriangle className="text-muted-foreground size-4" />
                           )}
                         </div>
                         <div className="min-w-0 flex-1 space-y-1.5">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium">{issue.title}</span>
+                            <span className="text-sm font-medium">
+                              {issue.title}
+                            </span>
                             <Badge
                               variant="outline"
                               className={cn(
@@ -535,7 +564,7 @@ export function RepositoryDetailView({ connectionId }: RepositoryDetailViewProps
                 <Card key={report.id} className="rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
-                      <Sparkles className="text-purple-400 size-4" />
+                      <Sparkles className="size-4 text-purple-400" />
                       {report.title}
                     </CardTitle>
                     {report.generatedBy && (

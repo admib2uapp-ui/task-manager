@@ -62,22 +62,17 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
+
   const { body, params, headers, skipAuth, ...init } = options;
 
   const finalHeaders = new Headers(headers);
 
-  if (!skipAuth && typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
     const supabase = createClient();
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (token) {
       finalHeaders.set("Authorization", `Bearer ${token}`);
-    } else {
-      const { getAuthSession } = await import("@/features/auth/lib/auth-session");
-      const local = getAuthSession();
-      if (local?.accessToken) {
-        finalHeaders.set("Authorization", `Bearer ${local.accessToken}`);
-      }
     }
   }
 
@@ -89,6 +84,7 @@ async function request<T>(
     ...init,
     method,
     headers: finalHeaders,
+    credentials: "include",
     body:
       body === undefined
         ? undefined

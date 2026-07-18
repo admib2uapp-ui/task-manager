@@ -24,12 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,7 +45,7 @@ import { useRepositories } from "@/features/repositories/hooks/use-repositories"
 import { useTriggerScan } from "@/features/repositories/hooks/use-repositories";
 import { useProjects } from "@/features/projects/hooks/use-projects";
 import { useTasks } from "@/features/tasks/hooks/use-tasks";
-import { getAuthSession } from "@/features/auth/lib/auth-session";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { formatRelative } from "@/lib/format";
 import type { GithubRepo } from "@/features/github/api/github-api";
@@ -162,7 +157,11 @@ function LinkedTasks({ tasks }: { tasks: Task[] }) {
 export function GitHubView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useGithubStatus();
+  const {
+    data: status,
+    isLoading: statusLoading,
+    refetch: refetchStatus,
+  } = useGithubStatus();
   const { data: connections = [], isLoading: connsLoading } = useRepositories();
   const { data: tasks, isLoading: tasksLoading } = useTasks();
   const { data: projects, isLoading: projectsLoading } = useProjects({
@@ -179,8 +178,9 @@ export function GitHubView() {
   const [connectingRepo, setConnectingRepo] = useState<string | null>(null);
 
   const connectUrl = useCallback(async () => {
-    const session = getAuthSession();
-    return `${githubApi.connectUrl()}?token=${session?.accessToken ?? ""}`;
+    const supabase = createClient();
+    const { data } = await supabase.auth.getSession();
+    return `${githubApi.connectUrl()}?token=${data.session?.access_token ?? ""}`;
   }, []);
 
   const connectedParam = searchParams.get("connected");
@@ -275,8 +275,9 @@ export function GitHubView() {
             <div>
               <h3 className="text-lg font-semibold">Connect GitHub Account</h3>
               <p className="text-muted-foreground mt-1 max-w-md text-sm">
-                Authorize Orbit to access your public repositories. You&apos;ll be
-                able to browse, connect, and AI-analyze repos directly from here.
+                Authorize Orbit to access your public repositories. You&apos;ll
+                be able to browse, connect, and AI-analyze repos directly from
+                here.
               </p>
             </div>
             <button
@@ -318,7 +319,7 @@ export function GitHubView() {
             </TabsTrigger>
             <TabsTrigger value="linked" className="gap-1.5">
               <GitBranch className="size-4" /> Linked
-              {(linkedProjects.length + linkedTasks.length) > 0 && (
+              {linkedProjects.length + linkedTasks.length > 0 && (
                 <span className="bg-muted text-muted-foreground ml-1 rounded-full px-1.5 text-[10px]">
                   {linkedProjects.length + linkedTasks.length}
                 </span>
@@ -329,12 +330,12 @@ export function GitHubView() {
           <TabsContent value="repos">
             <div className="mb-4">
               <div className="relative">
-                <Search className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <Input
                   placeholder="Search repositories..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-10"
+                  className="h-10 pl-9"
                 />
               </div>
             </div>
@@ -399,7 +400,9 @@ export function GitHubView() {
 
                         <div className="flex items-center gap-1.5">
                           {isConnected ? (
-                            <Link href={`/repositories/${connections.find((c) => c.githubOwner + "/" + c.githubRepo === repo.fullName)?.id ?? ""}`}>
+                            <Link
+                              href={`/repositories/${connections.find((c) => c.githubOwner + "/" + c.githubRepo === repo.fullName)?.id ?? ""}`}
+                            >
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -416,9 +419,12 @@ export function GitHubView() {
                               onClick={() =>
                                 handleConnectRepo(repo.owner, repo.name)
                               }
-                              disabled={connectingRepo === `${repo.owner}/${repo.name}`}
+                              disabled={
+                                connectingRepo === `${repo.owner}/${repo.name}`
+                              }
                             >
-                              {connectingRepo === `${repo.owner}/${repo.name}` ? (
+                              {connectingRepo ===
+                              `${repo.owner}/${repo.name}` ? (
                                 <>
                                   <Loader2 className="size-3.5 animate-spin" />{" "}
                                   Connecting...
@@ -468,15 +474,12 @@ export function GitHubView() {
                   const description = (meta?.description as string) ?? null;
                   const language = (meta?.language as string) ?? null;
                   return (
-                    <Link
-                      key={conn.id}
-                      href={`/repositories/${conn.id}`}
-                    >
+                    <Link key={conn.id} href={`/repositories/${conn.id}`}>
                       <Card className="border-border bg-card shadow-soft hover:border-muted-foreground/30 rounded-2xl transition-colors">
                         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <Sparkles className="text-purple-400 size-4 shrink-0" />
+                              <Sparkles className="size-4 shrink-0 text-purple-400" />
                               <span className="truncate text-sm font-semibold">
                                 {conn.githubOwner}/{conn.githubRepo}
                               </span>
@@ -576,8 +579,8 @@ export function GitHubView() {
             <AlertDialogTitle>Disconnect GitHub?</AlertDialogTitle>
             <AlertDialogDescription>
               This will remove your GitHub connection. Previously connected
-              repositories will keep their existing analysis data, but you won&apos;t
-              be able to connect new ones until you re-authorize.
+              repositories will keep their existing analysis data, but you
+              won&apos;t be able to connect new ones until you re-authorize.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -84,7 +84,7 @@ export function useRepositoryScans(connectionId: string) {
       const scans = query.state.data;
       if (!scans || scans.length === 0) return false;
       const latest = scans[0];
-      return (latest.status === "pending" || latest.status === "running")
+      return latest.status === "pending" || latest.status === "running"
         ? 5000
         : false;
     },
@@ -173,8 +173,7 @@ export function useAnalyzeRepository() {
       });
       toast.success("AI analysis complete");
     },
-    onError: (error) =>
-      toast.error(errorMessage(error, "AI analysis failed")),
+    onError: (error) => toast.error(errorMessage(error, "AI analysis failed")),
   });
 }
 

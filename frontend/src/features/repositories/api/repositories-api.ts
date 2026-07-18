@@ -150,8 +150,7 @@ export const repositoriesApi = {
     accessToken?: string | null;
   }) => api.post<RepositoryConnection>("/repositories/connect", payload),
 
-  get: (id: string) =>
-    api.get<RepositoryConnection>(`/repositories/${id}`),
+  get: (id: string) => api.get<RepositoryConnection>(`/repositories/${id}`),
 
   update: (id: string, payload: Record<string, unknown>) =>
     api.patch<RepositoryConnection>(`/repositories/${id}`, payload),
@@ -176,16 +175,13 @@ export const repositoriesApi = {
     api.get<GitHubLanguages>(`/repositories/${id}/languages`),
 
   // Scans
-  scans: (id: string) =>
-    api.get<RepositoryScan[]>(`/repositories/${id}/scans`),
+  scans: (id: string) => api.get<RepositoryScan[]>(`/repositories/${id}/scans`),
 
   triggerScan: (id: string, scanType: ScanType = "full") =>
     api.post<RepositoryScan>(`/repositories/${id}/scan`, { scanType }),
 
   getScan: (connectionId: string, scanId: string) =>
-    api.get<RepositoryScan>(
-      `/repositories/${connectionId}/scans/${scanId}`,
-    ),
+    api.get<RepositoryScan>(`/repositories/${connectionId}/scans/${scanId}`),
 
   // File Tree
   fileTree: (id: string, branch?: string) =>
@@ -194,10 +190,7 @@ export const repositoriesApi = {
     ),
 
   // AI Analysis
-  analyze: (
-    id: string,
-    reportType: ReportType = "executive",
-  ) =>
+  analyze: (id: string, reportType: ReportType = "executive") =>
     api.post<{
       reportType: string;
       title: string;
@@ -205,10 +198,8 @@ export const repositoriesApi = {
     }>(`/repositories/${id}/analyze`, { reportType }),
 
   // Code Issues
-  codeIssues: (
-    id: string,
-    params?: { severity?: string; category?: string },
-  ) => api.get<CodeIssue[]>(`/repositories/${id}/issues`, { params }),
+  codeIssues: (id: string, params?: { severity?: string; category?: string }) =>
+    api.get<CodeIssue[]>(`/repositories/${id}/issues`, { params }),
 
   // AI Reports
   aiReports: (id: string) =>
