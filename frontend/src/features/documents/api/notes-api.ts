@@ -1,9 +1,13 @@
 import { api } from "@/lib/api-client";
 
+import type { User } from "@/types/domain";
+
 export interface NoteSummary {
   id: string;
   projectId: string | null;
   title: string;
+  createdBy?: string | null;
+  updatedBy?: string | null;
   updatedAt: string;
 }
 
@@ -13,6 +17,10 @@ export interface Note {
   projectId: string | null;
   title: string;
   content: string;
+  createdBy?: string | null;
+  creator?: User | null;
+  updatedBy?: string | null;
+  updater?: User | null;
   createdAt: string;
   updatedAt: string;
 }

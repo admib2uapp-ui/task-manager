@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Query, status
 
-from app.core.deps import CurrentWorkspace, DbSession
+from app.core.deps import CurrentUser, CurrentUserRole, CurrentWorkspace, DbSession
 from app.schemas.common import MessageResponse
 from app.schemas.project import (
     MilestoneCreate,
@@ -40,10 +40,13 @@ async def list_projects(
 
 @router.post("", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
 async def create_project(
-    payload: ProjectCreate, workspace: CurrentWorkspace, db: DbSession
+    payload: ProjectCreate,
+    workspace: CurrentWorkspace,
+    db: DbSession,
+    current_user: CurrentUser,
 ) -> ProjectRead:
     service = ProjectService(db)
-    return await service.create(workspace.id, payload)
+    return await service.create(workspace.id, payload, current_user_id=current_user.id)
 
 
 @router.get("/{project_id}", response_model=ProjectRead)
@@ -60,9 +63,15 @@ async def update_project(
     payload: ProjectUpdate,
     workspace: CurrentWorkspace,
     db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> ProjectRead:
     service = ProjectService(db)
-    return await service.update(project_id, workspace.id, payload)
+    uid = current_user.id
+    return await service.update(
+        project_id, workspace.id, payload, current_user_id=uid,
+        member_role=current_member.role,
+    )
 
 
 @router.delete(
@@ -71,10 +80,17 @@ async def update_project(
     status_code=status.HTTP_200_OK,
 )
 async def delete_project(
-    project_id: uuid.UUID, workspace: CurrentWorkspace, db: DbSession
+    project_id: uuid.UUID,
+    workspace: CurrentWorkspace,
+    db: DbSession,
+    current_user: CurrentUser,
+    current_member: CurrentUserRole,
 ) -> MessageResponse:
     service = ProjectService(db)
-    await service.delete(project_id, workspace.id)
+    await service.delete(
+        project_id, workspace.id, current_user_id=current_user.id,
+        member_role=current_member.role,
+    )
     return MessageResponse(message="Project deleted")
 
 

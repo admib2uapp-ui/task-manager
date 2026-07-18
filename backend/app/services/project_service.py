@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
+from app.core.permissions import check_owner_or_admin
 from app.models.project import Project
 from app.repositories.milestone_repository import MilestoneRepository
 from app.repositories.project_repository import ProjectRepository
@@ -18,6 +19,7 @@ from app.schemas.project import (
     ProjectRead,
     ProjectUpdate,
 )
+from app.services.audit_service import AuditService
 
 
 class ProjectService:
@@ -76,7 +78,13 @@ class ProjectService:
         read.completed_task_count = done
         return read
 
-    async def create(self, workspace_id: uuid.UUID, data: ProjectCreate) -> ProjectRead:
+    async def create(
+        self,
+        workspace_id: uuid.UUID,
+        data: ProjectCreate,
+        *,
+        current_user_id: uuid.UUID,
+    ) -> ProjectRead:
         tags = await self.tags.get_many(workspace_id, data.tag_ids)
         project = Project(
             workspace_id=workspace_id,
@@ -88,9 +96,16 @@ class ProjectService:
             deadline=data.deadline,
             repository_url=data.repository_url,
             tags=tags,
+            created_by=current_user_id,
         )
         self.session.add(project)
         await self.session.flush()
+        await AuditService(self.session).log(
+            user_id=current_user_id,
+            action="CREATE_PROJECT",
+            entity_type="Project",
+            entity_id=project.id,
+        )
         refreshed = await self._get_or_404(project.id, workspace_id)
         return self.to_read(refreshed)
 
@@ -99,8 +114,12 @@ class ProjectService:
         project_id: uuid.UUID,
         workspace_id: uuid.UUID,
         data: ProjectUpdate,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
     ) -> ProjectRead:
         project = await self._get_or_404(project_id, workspace_id)
+        check_owner_or_admin(project, current_user_id, member_role, label="project")
         payload = data.model_dump(exclude_unset=True)
 
         if "tag_ids" in payload:
@@ -110,12 +129,34 @@ class ProjectService:
         for field, value in payload.items():
             setattr(project, field, value)
 
+        project.updated_by = current_user_id
         await self.session.flush()
+        await AuditService(self.session).log(
+            user_id=current_user_id,
+            action="UPDATE_PROJECT",
+            entity_type="Project",
+            entity_id=project_id,
+            details={"changes": list(payload.keys())},
+        )
         refreshed = await self._get_or_404(project_id, workspace_id)
         return self.to_read(refreshed)
 
-    async def delete(self, project_id: uuid.UUID, workspace_id: uuid.UUID) -> None:
+    async def delete(
+        self,
+        project_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+        *,
+        current_user_id: uuid.UUID,
+        member_role: str | None = None,
+    ) -> None:
         project = await self._get_or_404(project_id, workspace_id)
+        check_owner_or_admin(project, current_user_id, member_role, label="project")
+        await AuditService(self.session).log(
+            user_id=current_user_id,
+            action="DELETE_PROJECT",
+            entity_type="Project",
+            entity_id=project_id,
+        )
         await self.session.delete(project)
         await self.session.flush()
 

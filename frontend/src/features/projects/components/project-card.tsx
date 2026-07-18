@@ -34,6 +34,7 @@ import {
   useDeleteProject,
   useUpdateProject,
 } from "@/features/projects/hooks/use-projects";
+import { useAuthStore } from "@/features/auth/store/auth-store";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/types/domain";
@@ -46,6 +47,8 @@ interface ProjectCardProps {
 export function ProjectCard({ project, onEdit }: ProjectCardProps) {
   const update = useUpdateProject();
   const remove = useDeleteProject();
+  const currentUser = useAuthStore((s) => s.user);
+  const isOwner = currentUser?.id === project.createdBy;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const Icon = getProjectIcon(project.icon);
 
@@ -86,52 +89,54 @@ export function ProjectCard({ project, onEdit }: ProjectCardProps) {
                   )}
                 />
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground size-8 rounded-lg opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground size-8 rounded-lg opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                      onClick={(e) => e.preventDefault()}
+                      aria-label="Project actions"
+                    >
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
                     onClick={(e) => e.preventDefault()}
-                    aria-label="Project actions"
                   >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuItem onClick={() => onEdit(project)}>
-                    <Pencil className="size-4" /> Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      update.mutate({
-                        id: project.id,
-                        payload: { isArchived: !project.isArchived },
-                      })
-                    }
-                  >
-                    {project.isArchived ? (
-                      <>
-                        <ArchiveRestore className="size-4" /> Unarchive
-                      </>
-                    ) : (
-                      <>
-                        <Archive className="size-4" /> Archive
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => setConfirmOpen(true)}
-                  >
-                    <Trash2 className="size-4" /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem onClick={() => onEdit(project)}>
+                      <Pencil className="size-4" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        update.mutate({
+                          id: project.id,
+                          payload: { isArchived: !project.isArchived },
+                        })
+                      }
+                    >
+                      {project.isArchived ? (
+                        <>
+                          <ArchiveRestore className="size-4" /> Unarchive
+                        </>
+                      ) : (
+                        <>
+                          <Archive className="size-4" /> Archive
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => setConfirmOpen(true)}
+                    >
+                      <Trash2 className="size-4" /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
 

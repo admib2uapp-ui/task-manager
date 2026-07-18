@@ -62,7 +62,7 @@ async def test_login_supabase_user_blocked(
         supabase_id="test-supabase-id",
     )
     ws_service = WorkspaceService(db_session)
-    await ws_service.create_for_user(user)
+    await ws_service.join_company(user)
     await db_session.commit()
 
     response = await client.post(

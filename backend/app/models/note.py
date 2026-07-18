@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, String, Text, Uuid
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class Note(UUIDMixin, TimestampMixin, Base):
@@ -19,3 +23,16 @@ class Note(UUIDMixin, TimestampMixin, Base):
     )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     content: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+    creator: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[created_by]
+    )
+    updater: Mapped[User | None] = relationship(
+        lazy="selectin", foreign_keys=[updated_by]
+    )

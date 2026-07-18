@@ -138,6 +138,7 @@ function TaskDetailBody({
   const update = useUpdateTask();
   const deleteTask = useDeleteTask();
   const currentUser = useAuthStore((s) => s.user);
+  const isOwner = currentUser?.id === task.createdBy;
   const mutations = useTaskDetailMutations(task.id);
   const { data: projectTasks = [] } = useTasks({ projectId: task.projectId });
 
@@ -193,40 +194,42 @@ function TaskDetailBody({
             </span>
           )}
         </div>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-destructive size-8 rounded-lg"
-              aria-label="Delete task"
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete this task?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This permanently removes the task and its subtasks, checklist
-                and comments.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive hover:bg-destructive/90 text-white"
-                onClick={() =>
-                  deleteTask.mutate(task.id, {
-                    onSuccess: () => onDeleted?.(),
-                  })
-                }
+        {isOwner && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive size-8 rounded-lg"
+                aria-label="Delete task"
               >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <Trash2 className="size-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this task?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently removes the task and its subtasks, checklist
+                  and comments.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive hover:bg-destructive/90 text-white"
+                  onClick={() =>
+                    deleteTask.mutate(task.id, {
+                      onSuccess: () => onDeleted?.(),
+                    })
+                  }
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
@@ -640,6 +643,11 @@ function TaskDetailBody({
                   <CalendarClock className="size-3.5" /> Created{" "}
                   {formatDateTime(task.createdAt)}
                 </span>
+                {task.creator && (
+                  <span className="inline-flex items-center gap-1">
+                    by {task.creator.name}
+                  </span>
+                )}
               </div>
             </TabsContent>
 

@@ -35,6 +35,7 @@ _include_router("app.api.v1.routers.search")
 _include_router("app.api.v1.routers.time_entries")
 _include_router("app.api.v1.routers.analytics")
 _include_router("app.api.v1.routers.notes")
+_include_router("app.api.v1.routers.activity")
 _include_router("app.api.v1.routers.notifications")
 
 # Optional routers often affected by serverless runtime limitations.

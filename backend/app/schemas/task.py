@@ -75,6 +75,8 @@ class AttachmentRead(ORMModel):
     file_url: str
     mime_type: str
     size_bytes: int
+    created_by: uuid.UUID | None = None
+    updated_by: uuid.UUID | None = None
     created_at: datetime
 
 
@@ -106,6 +108,10 @@ class TaskRead(ORMModel):
     github_pr_url: str | None
     github_branch: str | None
     is_pinned: bool
+    created_by: uuid.UUID | None = None
+    creator: UserRead | None = None
+    updated_by: uuid.UUID | None = None
+    updater: UserRead | None = None
     tags: list[TagRead] = []
     subtasks: list[SubtaskRead] = []
     checklist: list[ChecklistItemRead] = []

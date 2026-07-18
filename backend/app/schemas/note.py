@@ -5,6 +5,7 @@ from datetime import datetime
 
 from pydantic import Field
 
+from app.schemas.auth import UserRead
 from app.schemas.common import CamelModel, ORMModel
 
 
@@ -14,6 +15,10 @@ class NoteRead(ORMModel):
     project_id: uuid.UUID | None
     title: str
     content: str
+    created_by: uuid.UUID | None = None
+    creator: UserRead | None = None
+    updated_by: uuid.UUID | None = None
+    updater: UserRead | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -22,6 +27,7 @@ class NoteSummary(ORMModel):
     id: uuid.UUID
     project_id: uuid.UUID | None
     title: str
+    created_by: uuid.UUID | None = None
     updated_at: datetime
 
 

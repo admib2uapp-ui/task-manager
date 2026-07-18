@@ -16,6 +16,7 @@ import {
   useNotes,
   useUpdateNote,
 } from "@/features/documents/hooks/use-notes";
+import { useAuthStore } from "@/features/auth/store/auth-store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,8 @@ function Editor({ noteId }: { noteId: string }) {
   const { data: note } = useNote(noteId);
   const update = useUpdateNote();
   const remove = useDeleteNote();
+  const currentUser = useAuthStore((s) => s.user);
+  const isOwner = currentUser?.id === note?.createdBy;
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [mode, setMode] = useState<"write" | "preview">("write");
@@ -100,15 +103,17 @@ function Editor({ noteId }: { noteId: string }) {
             <Eye className="size-3.5" /> Preview
           </button>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-destructive size-9 rounded-lg"
-          onClick={() => remove.mutate(note.id)}
-          aria-label="Delete note"
-        >
-          <Trash2 className="size-4" />
-        </Button>
+        {isOwner && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive size-9 rounded-lg"
+            onClick={() => remove.mutate(note.id)}
+            aria-label="Delete note"
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        )}
       </div>
 
       {mode === "write" ? (

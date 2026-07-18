@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import Field
 
+from app.schemas.auth import UserRead
 from app.schemas.common import CamelModel, ORMModel
 
 ProjectStatus = Literal["active", "paused", "completed", "archived"]
@@ -40,6 +41,8 @@ class MilestoneRead(ORMModel):
     due_date: datetime | None
     completed: bool
     position: float
+    created_by: uuid.UUID | None = None
+    updated_by: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -80,6 +83,10 @@ class ProjectRead(ORMModel):
     completed_milestone_count: int = 0
     task_count: int = 0
     completed_task_count: int = 0
+    created_by: uuid.UUID | None = None
+    creator: UserRead | None = None
+    updated_by: uuid.UUID | None = None
+    updater: UserRead | None = None
     created_at: datetime
     updated_at: datetime
 

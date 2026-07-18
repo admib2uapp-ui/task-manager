@@ -219,5 +219,6 @@ async def test_task_workspace_isolation(
 
     other_token = await create_user("Alan Turing", "alan2@example.com")
     client.headers.update({"Authorization": f"Bearer {other_token}"})
+    # All users share the Company workspace, so the task is visible
     resp = await client.get(f"{TASKS}/{task['id']}")
-    assert resp.status_code == 404
+    assert resp.status_code == 200
