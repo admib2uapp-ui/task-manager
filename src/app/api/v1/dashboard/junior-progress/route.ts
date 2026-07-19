@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const { user, workspace } = await getRouteContext();
 
-    const roleError = await requireRole(["senior"], user.id, workspace.id);
+    const roleError = await requireRole(["senior"], user.id, workspace);
     if (roleError) return roleError;
 
     const { data: juniorMemberships } = await supabaseAdmin

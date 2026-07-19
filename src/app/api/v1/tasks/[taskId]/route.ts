@@ -101,7 +101,7 @@ export async function PATCH(
     const { taskId } = await params;
     const body = await request.json();
 
-    const roleError = await requireRole(["owner"], user.id, workspace.id);
+    const roleError = await requireRole(["owner"], user.id, workspace);
     if (roleError) return roleError;
 
     const { data: existing } = await supabaseAdmin
@@ -179,7 +179,7 @@ export async function DELETE(
     const { user, workspace } = await getRouteContext();
     const { taskId } = await params;
 
-    const roleError = await requireRole(["owner"], user.id, workspace.id);
+    const roleError = await requireRole(["owner"], user.id, workspace);
     if (roleError) return roleError;
 
     const { data: existing } = await supabaseAdmin

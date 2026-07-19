@@ -24,6 +24,12 @@ function mapSupabaseUser(authUser: {
   };
 }
 
+const ROLE_MAP: Record<string, string> = {
+  admin: "senior",
+  member: "general",
+  viewer: "junior",
+};
+
 export async function getUserWorkspaceRole(
   userId: string,
   workspaceId: string,
@@ -34,16 +40,18 @@ export async function getUserWorkspaceRole(
     .eq("workspace_id", workspaceId)
     .eq("user_id", userId)
     .maybeSingle();
-  return data?.role ?? null;
+  if (!data?.role) return null;
+  return ROLE_MAP[data.role] ?? data.role;
 }
 
 export async function requireRole(
   allowedRoles: string[],
   userId: string,
-  workspaceId: string,
+  workspace: Workspace,
 ): Promise<NextResponse | null> {
-  const role = await getUserWorkspaceRole(userId, workspaceId);
+  const role = await getUserWorkspaceRole(userId, workspace.id);
   if (role && allowedRoles.includes(role)) return null;
+  if (userId === workspace.ownerId) return null;
   return forbidden("You do not have permission to perform this action");
 }
 
@@ -107,7 +115,8 @@ export async function requireOwnership(
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (membership?.role === "owner") return null;
+  const normalizedRole = membership?.role ? (ROLE_MAP[membership.role] ?? membership.role) : null;
+  if (normalizedRole === "owner") return null;
 
   return forbidden("You do not have permission to modify this resource");
 }

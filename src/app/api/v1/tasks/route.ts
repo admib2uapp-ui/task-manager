@@ -90,7 +90,7 @@ export async function POST(request: Request) {
   try {
     const { user, workspace } = await getRouteContext();
 
-    const roleError = await requireRole(["owner"], user.id, workspace.id);
+    const roleError = await requireRole(["owner"], user.id, workspace);
     if (roleError) return roleError;
 
     const body = await request.json();
