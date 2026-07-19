@@ -163,6 +163,22 @@ export async function PATCH(
       return NextResponse.json({ detail: error.message }, { status: 400 });
     if (!data) return notFound("Task");
 
+    if (body.assigneeId && body.assigneeId !== existing.assignee_id) {
+      const { data: existingMember } = await supabaseAdmin
+        .from("project_members")
+        .select("id")
+        .eq("project_id", data.project_id)
+        .eq("user_id", body.assigneeId)
+        .maybeSingle();
+      if (!existingMember) {
+        await supabaseAdmin.from("project_members").insert({
+          project_id: data.project_id,
+          user_id: body.assigneeId,
+          role: "general",
+        });
+      }
+    }
+
     await insertAuditLog({
       userId: user.id,
       action: "UPDATE_TASK",

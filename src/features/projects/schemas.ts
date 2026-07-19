@@ -14,6 +14,7 @@ export const projectFormSchema = z.object({
     .or(z.literal(""))
     .optional(),
   tagIds: z.array(z.string()),
+  memberIds: z.array(z.string()),
 });
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;

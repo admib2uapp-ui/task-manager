@@ -123,6 +123,16 @@ export async function POST(request: Request) {
       );
     }
 
+    if (body.memberIds?.length > 0) {
+      await supabaseAdmin.from("project_members").insert(
+        body.memberIds.map((userId: string) => ({
+          project_id: data.id,
+          user_id: userId,
+          role: "general",
+        })),
+      );
+    }
+
     return NextResponse.json(data, { status: 201 });
   } catch {
     return unauthorized();

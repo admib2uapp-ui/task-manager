@@ -17,6 +17,7 @@ export interface ProjectPayload {
   deadline?: string | null;
   repositoryUrl?: string | null;
   tagIds?: string[];
+  memberIds?: string[];
 }
 
 export interface ProjectUpdatePayload extends Partial<ProjectPayload> {

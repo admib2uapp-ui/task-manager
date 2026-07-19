@@ -86,13 +86,19 @@ export async function GET() {
     dueTodayQuery = applyTaskFilter(dueTodayQuery);
     const { count: dueToday } = await dueTodayQuery;
 
-    const { count: overdueTasks } = await supabaseAdmin
+    let overdueTasksQuery = supabaseAdmin
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("assignee_id", user.id)
       .not("status", "eq", "done")
       .not("deadline", "is", null)
       .lt("deadline", today);
+    if (role === "general" && memberProjectIds.length > 0) {
+      overdueTasksQuery = overdueTasksQuery.in("project_id", memberProjectIds);
+    } else if (role === "general" && memberProjectIds.length === 0) {
+      overdueTasksQuery = overdueTasksQuery.in("project_id", []);
+    }
+    const { count: overdueTasks } = await overdueTasksQuery;
 
     const { data: todayEntries } = await supabaseAdmin
       .from("time_entries")
@@ -105,7 +111,7 @@ export async function GET() {
       0,
     );
 
-    const { data: myTasks } = await supabaseAdmin
+    let myTasksQuery = supabaseAdmin
       .from("tasks")
       .select(
         "id, title, status, priority, deadline, project:projects(id, name, color, icon)",
@@ -114,8 +120,14 @@ export async function GET() {
       .not("status", "eq", "done")
       .order("deadline", { ascending: true })
       .limit(10);
+    if (role === "general" && memberProjectIds.length > 0) {
+      myTasksQuery = myTasksQuery.in("project_id", memberProjectIds);
+    } else if (role === "general" && memberProjectIds.length === 0) {
+      myTasksQuery = myTasksQuery.in("project_id", []);
+    }
+    const { data: myTasks } = await myTasksQuery;
 
-    const { data: upcomingTasks } = await supabaseAdmin
+    let upcomingTasksQuery = supabaseAdmin
       .from("tasks")
       .select(
         "id, title, status, priority, deadline, project:projects(id, name, color, icon)",
@@ -126,6 +138,12 @@ export async function GET() {
       .gte("deadline", today)
       .order("deadline", { ascending: true })
       .limit(5);
+    if (role === "general" && memberProjectIds.length > 0) {
+      upcomingTasksQuery = upcomingTasksQuery.in("project_id", memberProjectIds);
+    } else if (role === "general" && memberProjectIds.length === 0) {
+      upcomingTasksQuery = upcomingTasksQuery.in("project_id", []);
+    }
+    const { data: upcomingTasks } = await upcomingTasksQuery;
 
     let recentProjectsQuery = supabaseAdmin
       .from("projects")

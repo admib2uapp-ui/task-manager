@@ -139,6 +139,22 @@ export async function POST(request: Request) {
       );
     }
 
+    if (body.assigneeId) {
+      const { data: existingMember } = await supabaseAdmin
+        .from("project_members")
+        .select("id")
+        .eq("project_id", body.projectId)
+        .eq("user_id", body.assigneeId)
+        .maybeSingle();
+      if (!existingMember) {
+        await supabaseAdmin.from("project_members").insert({
+          project_id: body.projectId,
+          user_id: body.assigneeId,
+          role: "general",
+        });
+      }
+    }
+
     await insertAuditLog({
       userId: user.id,
       action: "CREATE_TASK",

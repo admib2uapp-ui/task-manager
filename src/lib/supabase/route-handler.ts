@@ -24,7 +24,7 @@ function mapSupabaseUser(authUser: {
   };
 }
 
-const ROLE_MAP: Record<string, string> = {
+export const ROLE_MAP: Record<string, string> = {
   admin: "senior",
   member: "general",
   viewer: "junior",
