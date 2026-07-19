@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Activity,
@@ -253,7 +253,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                       {formatDate(project.deadline)}
                     </span>
                   ) : (
-                    "—"
+                    "�&rdquo;"
                   )}
                 </DetailRow>
                 <DetailRow label="Repository">
@@ -267,7 +267,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                       Open <ExternalLink className="size-3.5" />
                     </a>
                   ) : (
-                    "—"
+                    "�&rdquo;"
                   )}
                 </DetailRow>
                 <DetailRow label="Created">
@@ -305,7 +305,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{project.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>Delete &ldquo;{project.name}&rdquo;?</AlertDialogTitle>
             <AlertDialogDescription>
               This permanently deletes the project and all its tasks, milestones
               and notes. This action cannot be undone.
