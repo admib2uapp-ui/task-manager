@@ -1,10 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,7 @@ import {
   projectFormSchema,
   type ProjectFormValues,
 } from "@/features/projects/schemas";
+import { useWorkspaceMembers } from "@/features/users/hooks/use-users";
 import type { Project } from "@/types/domain";
 
 interface ProjectFormDialogProps {
@@ -66,6 +68,11 @@ export function ProjectFormDialog({
   const isEdit = Boolean(project);
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
+  const { data: members = [] } = useWorkspaceMembers();
+
+  const generalMembers = members.filter(
+    (m) => m.workspaceRole === "general",
+  );
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -78,6 +85,7 @@ export function ProjectFormDialog({
       deadline: "",
       repositoryUrl: "",
       tagIds: [],
+      memberIds: [],
     },
   });
 
@@ -92,6 +100,7 @@ export function ProjectFormDialog({
         deadline: toDateInput(project?.deadline),
         repositoryUrl: project?.repositoryUrl ?? "",
         tagIds: project?.tags.map((t) => t.id) ?? [],
+        memberIds: [],
       });
     }
   }, [open, project, form]);
@@ -110,6 +119,7 @@ export function ProjectFormDialog({
       deadline: values.deadline ? `${values.deadline}T00:00:00Z` : null,
       repositoryUrl: values.repositoryUrl || null,
       tagIds: values.tagIds,
+      memberIds: values.memberIds,
     };
 
     if (isEdit && project) {
@@ -279,6 +289,58 @@ export function ProjectFormDialog({
                     }
                   />
                 </div>
+
+                {!isEdit && generalMembers.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5">
+                      <Users className="text-muted-foreground size-4" />
+                      Members
+                      <span className="text-muted-foreground text-xs font-normal">
+                        (optional)
+                      </span>
+                    </Label>
+                    <div className="border-border max-h-48 space-y-1 overflow-y-auto rounded-lg border p-2">
+                      {generalMembers.map((m) => {
+                        const checked = form
+                          .watch("memberIds")
+                          .includes(m.id);
+                        return (
+                          <label
+                            key={m.id}
+                            className="hover:bg-accent flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(val) => {
+                                const current =
+                                  form.getValues("memberIds");
+                                if (val) {
+                                  form.setValue("memberIds", [
+                                    ...current,
+                                    m.id,
+                                  ]);
+                                } else {
+                                  form.setValue(
+                                    "memberIds",
+                                    current.filter(
+                                      (id) => id !== m.id,
+                                    ),
+                                  );
+                                }
+                              }}
+                            />
+                            <span className="min-w-0 flex-1 truncate">
+                              {m.name}
+                            </span>
+                            <span className="text-muted-foreground shrink-0 text-xs">
+                              {m.email}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

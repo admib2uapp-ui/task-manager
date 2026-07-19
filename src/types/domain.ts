@@ -38,9 +38,9 @@ export type ProjectStatus =
 
 export const WORKSPACE_ROLE = {
   OWNER: "owner",
-  ADMIN: "admin",
-  MEMBER: "member",
-  VIEWER: "viewer",
+  SENIOR: "senior",
+  GENERAL: "general",
+  JUNIOR: "junior",
 } as const;
 export type WorkspaceRole =
   (typeof WORKSPACE_ROLE)[keyof typeof WORKSPACE_ROLE];
@@ -64,6 +64,7 @@ export interface User {
   email: string;
   name: string;
   avatarUrl: string | null;
+  workspaceRole?: WorkspaceRole;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }

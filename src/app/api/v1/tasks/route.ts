@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getRouteContext, unauthorized, insertAuditLog } from "@/lib/supabase/route-handler";
+import {
+  getRouteContext,
+  unauthorized,
+  requireRole,
+  getUserWorkspaceRole,
+  insertAuditLog,
+} from "@/lib/supabase/route-handler";
 
 export async function GET(request: Request) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { searchParams } = new URL(request.url);
+
+    const role = await getUserWorkspaceRole(user.id, workspace.id);
 
     const projectId = searchParams.get("projectId");
     const status = searchParams.get("status");
@@ -27,6 +35,36 @@ export async function GET(request: Request) {
       .order("position", { ascending: true });
 
     if (projectId) query = query.eq("project_id", projectId);
+
+    // Task visibility by role
+    if (role !== "owner") {
+      // Senior: own tasks + junior users' tasks (read-only)
+      if (role === "senior") {
+        const { data: juniorMemberships } = await supabaseAdmin
+          .from("workspace_members")
+          .select("user_id")
+          .eq("workspace_id", workspace.id)
+          .eq("role", "junior");
+
+        const juniorIds = (juniorMemberships || []).map((m) => m.user_id);
+        const visibleIds = [user.id, ...juniorIds];
+        query = query.in("assignee_id", visibleIds);
+      } else {
+        // Junior/General: only own tasks
+        query = query.eq("assignee_id", user.id);
+
+        // General additionally restricted to member projects
+        if (role === "general") {
+          const { data: memberProjectIds } = await supabaseAdmin
+            .from("project_members")
+            .select("project_id")
+            .eq("user_id", user.id);
+          const ids = (memberProjectIds || []).map((m) => m.project_id);
+          query = query.in("project_id", ids.length > 0 ? ids : []);
+        }
+      }
+    }
+
     if (status) query = query.eq("status", status);
     if (priority) query = query.eq("priority", priority);
     if (assigneeId) query = query.eq("assignee_id", assigneeId);
@@ -56,7 +94,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { user } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
+
+    const roleError = await requireRole(["owner"], user.id, workspace);
+    if (roleError) return roleError;
+
     const body = await request.json();
 
     const { data: maxPos } = await supabaseAdmin
@@ -95,6 +137,22 @@ export async function POST(request: Request) {
           tag_id: tagId,
         })),
       );
+    }
+
+    if (body.assigneeId) {
+      const { data: existingMember } = await supabaseAdmin
+        .from("project_members")
+        .select("id")
+        .eq("project_id", body.projectId)
+        .eq("user_id", body.assigneeId)
+        .maybeSingle();
+      if (!existingMember) {
+        await supabaseAdmin.from("project_members").insert({
+          project_id: body.projectId,
+          user_id: body.assigneeId,
+          role: "general",
+        });
+      }
     }
 
     await insertAuditLog({

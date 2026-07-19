@@ -4,7 +4,9 @@ import {
   getRouteContext,
   unauthorized,
   notFound,
-  requireOwnership,
+  requireRole,
+  getUserWorkspaceRole,
+  requireProjectMember,
   insertAuditLog,
 } from "@/lib/supabase/route-handler";
 
@@ -13,8 +15,14 @@ export async function GET(
   { params }: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { projectId } = await params;
+
+    const role = await getUserWorkspaceRole(user.id, workspace.id);
+    if (role === "general") {
+      const memberError = await requireProjectMember(user.id, projectId);
+      if (memberError) return memberError;
+    }
 
     const { data } = await supabaseAdmin
       .from("projects")
@@ -86,6 +94,9 @@ export async function PATCH(
     const { projectId } = await params;
     const body = await request.json();
 
+    const roleError = await requireRole(["owner"], user.id, workspace);
+    if (roleError) return roleError;
+
     const { data: existing } = await supabaseAdmin
       .from("projects")
       .select("created_by")
@@ -94,11 +105,6 @@ export async function PATCH(
       .single();
 
     if (!existing) return notFound("Project");
-
-    const ownershipError = await requireOwnership(
-      existing.created_by, user.id, workspace.id,
-    );
-    if (ownershipError) return ownershipError;
 
     const updates: Record<string, unknown> = {};
     if (body.name !== undefined) updates.name = body.name;
@@ -145,6 +151,9 @@ export async function DELETE(
     const { user, workspace } = await getRouteContext();
     const { projectId } = await params;
 
+    const roleError = await requireRole(["owner"], user.id, workspace);
+    if (roleError) return roleError;
+
     const { data: existing } = await supabaseAdmin
       .from("projects")
       .select("created_by")
@@ -153,11 +162,6 @@ export async function DELETE(
       .single();
 
     if (!existing) return notFound("Project");
-
-    const ownershipError = await requireOwnership(
-      existing.created_by, user.id, workspace.id,
-    );
-    if (ownershipError) return ownershipError;
 
     await insertAuditLog({
       userId: user.id,

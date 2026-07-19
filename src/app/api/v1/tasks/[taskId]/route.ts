@@ -4,7 +4,9 @@ import {
   getRouteContext,
   unauthorized,
   notFound,
-  requireOwnership,
+  requireRole,
+  getUserWorkspaceRole,
+  getProjectRole,
   insertAuditLog,
 } from "@/lib/supabase/route-handler";
 
@@ -13,8 +15,10 @@ export async function GET(
   { params }: { params: Promise<{ taskId: string }> },
 ) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { taskId } = await params;
+
+    const role = await getUserWorkspaceRole(user.id, workspace.id);
 
     const { data } = await supabaseAdmin
       .from("tasks")
@@ -35,6 +39,31 @@ export async function GET(
       .single();
 
     if (!data) return notFound("Task");
+
+    // Task visibility by role
+    if (role !== "owner") {
+      // Senior: own tasks + junior users' tasks
+      if (role === "senior") {
+        if (data.assignee_id !== user.id) {
+          const assigneeRole = await getUserWorkspaceRole(data.assignee_id, workspace.id);
+          if (assigneeRole !== "junior") {
+            return notFound("Task");
+          }
+        }
+      } else {
+        // Junior/General: only own tasks
+        if (data.assignee_id !== user.id) {
+          return notFound("Task");
+        }
+        // General additionally restricted to member projects
+        if (role === "general") {
+          const projectRole = await getProjectRole(user.id, data.project_id);
+          if (!projectRole) {
+            return notFound("Task");
+          }
+        }
+      }
+    }
 
     const { data: deps } = await supabaseAdmin
       .from("task_dependencies")
@@ -81,6 +110,9 @@ export async function PATCH(
     const { taskId } = await params;
     const body = await request.json();
 
+    const roleError = await requireRole(["owner"], user.id, workspace);
+    if (roleError) return roleError;
+
     const { data: existing } = await supabaseAdmin
       .from("tasks")
       .select("created_by, assignee_id")
@@ -88,11 +120,6 @@ export async function PATCH(
       .single();
 
     if (!existing) return notFound("Task");
-
-    const ownershipError = await requireOwnership(
-      existing.created_by, user.id, workspace.id, existing.assignee_id,
-    );
-    if (ownershipError) return ownershipError;
 
     const updates: Record<string, unknown> = {};
     if (body.title !== undefined) updates.title = body.title;
@@ -136,6 +163,22 @@ export async function PATCH(
       return NextResponse.json({ detail: error.message }, { status: 400 });
     if (!data) return notFound("Task");
 
+    if (body.assigneeId && body.assigneeId !== existing.assignee_id) {
+      const { data: existingMember } = await supabaseAdmin
+        .from("project_members")
+        .select("id")
+        .eq("project_id", data.project_id)
+        .eq("user_id", body.assigneeId)
+        .maybeSingle();
+      if (!existingMember) {
+        await supabaseAdmin.from("project_members").insert({
+          project_id: data.project_id,
+          user_id: body.assigneeId,
+          role: "general",
+        });
+      }
+    }
+
     await insertAuditLog({
       userId: user.id,
       action: "UPDATE_TASK",
@@ -161,6 +204,9 @@ export async function DELETE(
     const { user, workspace } = await getRouteContext();
     const { taskId } = await params;
 
+    const roleError = await requireRole(["owner"], user.id, workspace);
+    if (roleError) return roleError;
+
     const { data: existing } = await supabaseAdmin
       .from("tasks")
       .select("created_by")
@@ -168,11 +214,6 @@ export async function DELETE(
       .single();
 
     if (!existing) return notFound("Task");
-
-    const ownershipError = await requireOwnership(
-      existing.created_by, user.id, workspace.id,
-    );
-    if (ownershipError) return ownershipError;
 
     await insertAuditLog({
       userId: user.id,

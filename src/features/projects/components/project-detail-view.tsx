@@ -9,11 +9,22 @@ import {
   Loader2,
   Pencil,
   Star,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageContainer } from "@/components/shared/page-container";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +37,7 @@ import { ProjectBoard } from "@/features/tasks/components/project-board";
 import {
   useProject,
   useUpdateProject,
+  useDeleteProject,
 } from "@/features/projects/hooks/use-projects";
 import { useAuthStore } from "@/features/auth/store/auth-store";
 import { formatDate } from "@/lib/format";
@@ -50,8 +62,10 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const { data: project, isLoading, isError } = useProject(projectId);
   const update = useUpdateProject();
   const currentUser = useAuthStore((s) => s.user);
-  const isOwner = currentUser?.id === project?.createdBy;
+  const isOwner = currentUser?.workspaceRole === "owner";
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const remove = useDeleteProject();
 
   if (isLoading) {
     return (
@@ -163,13 +177,24 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             />
           </Button>
           {isOwner && (
-            <Button
-              className="gap-1.5 rounded-xl"
-              variant="outline"
-              onClick={() => setEditOpen(true)}
-            >
-              <Pencil className="size-4" /> Edit
-            </Button>
+            <>
+              <Button
+                className="gap-1.5 rounded-xl"
+                variant="outline"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="size-4" /> Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-9 rounded-xl text-destructive hover:text-destructive"
+                onClick={() => setConfirmOpen(true)}
+                aria-label="Delete project"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -276,6 +301,27 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         onOpenChange={setEditOpen}
         project={project}
       />
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{project.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the project and all its tasks, milestones
+              and notes. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-white"
+              onClick={() => remove.mutate(project.id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageContainer>
   );
 }
