@@ -48,7 +48,7 @@ export function ProjectCard({ project, onEdit }: ProjectCardProps) {
   const update = useUpdateProject();
   const remove = useDeleteProject();
   const currentUser = useAuthStore((s) => s.user);
-  const isOwner = currentUser?.id === project.createdBy;
+  const isOwner = currentUser?.workspaceRole === "owner";
   const [confirmOpen, setConfirmOpen] = useState(false);
   const Icon = getProjectIcon(project.icon);
 

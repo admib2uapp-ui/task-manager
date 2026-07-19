@@ -40,19 +40,28 @@ export async function GET(
 
     if (!data) return notFound("Task");
 
-    // Enforce task visibility based on role
-    if (role === "senior") {
-      const projectRole = await getProjectRole(user.id, data.project_id);
-      if (!projectRole) {
-        return notFound("Task");
-      }
-    } else if (role === "junior" || role === "general") {
-      if (data.assignee_id !== user.id) {
-        return notFound("Task");
-      }
-      const projectRole = await getProjectRole(user.id, data.project_id);
-      if (!projectRole) {
-        return notFound("Task");
+    // Task visibility by role
+    if (role !== "owner") {
+      // Senior: own tasks + junior users' tasks
+      if (role === "senior") {
+        if (data.assignee_id !== user.id) {
+          const assigneeRole = await getUserWorkspaceRole(data.assignee_id, workspace.id);
+          if (assigneeRole !== "junior") {
+            return notFound("Task");
+          }
+        }
+      } else {
+        // Junior/General: only own tasks
+        if (data.assignee_id !== user.id) {
+          return notFound("Task");
+        }
+        // General additionally restricted to member projects
+        if (role === "general") {
+          const projectRole = await getProjectRole(user.id, data.project_id);
+          if (!projectRole) {
+            return notFound("Task");
+          }
+        }
       }
     }
 

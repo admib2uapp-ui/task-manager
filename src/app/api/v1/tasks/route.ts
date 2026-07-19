@@ -36,27 +36,33 @@ export async function GET(request: Request) {
 
     if (projectId) query = query.eq("project_id", projectId);
 
-    // Owner: sees all tasks (no filter)
-    // Senior: sees tasks only in projects they are a member of
-    if (role === "senior") {
-      const { data: memberProjectIds } = await supabaseAdmin
-        .from("project_members")
-        .select("project_id")
-        .eq("user_id", user.id);
-      const ids = (memberProjectIds || []).map((m) => m.project_id);
-      query = query.in("project_id", ids.length > 0 ? ids : []);
-    }
+    // Task visibility by role
+    if (role !== "owner") {
+      // Senior: own tasks + junior users' tasks (read-only)
+      if (role === "senior") {
+        const { data: juniorMemberships } = await supabaseAdmin
+          .from("workspace_members")
+          .select("user_id")
+          .eq("workspace_id", workspace.id)
+          .eq("role", "junior");
 
-    // Junior/General: only tasks assigned to self within member projects
-    if (role === "junior" || role === "general") {
-      const { data: memberProjectIds } = await supabaseAdmin
-        .from("project_members")
-        .select("project_id")
-        .eq("user_id", user.id);
-      const ids = (memberProjectIds || []).map((m) => m.project_id);
-      query = query
-        .in("project_id", ids.length > 0 ? ids : [])
-        .eq("assignee_id", user.id);
+        const juniorIds = (juniorMemberships || []).map((m) => m.user_id);
+        const visibleIds = [user.id, ...juniorIds];
+        query = query.in("assignee_id", visibleIds);
+      } else {
+        // Junior/General: only own tasks
+        query = query.eq("assignee_id", user.id);
+
+        // General additionally restricted to member projects
+        if (role === "general") {
+          const { data: memberProjectIds } = await supabaseAdmin
+            .from("project_members")
+            .select("project_id")
+            .eq("user_id", user.id);
+          const ids = (memberProjectIds || []).map((m) => m.project_id);
+          query = query.in("project_id", ids.length > 0 ? ids : []);
+        }
+      }
     }
 
     if (status) query = query.eq("status", status);

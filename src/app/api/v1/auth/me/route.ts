@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getRouteContext, unauthorized } from "@/lib/supabase/route-handler";
+import {
+  getRouteContext,
+  getUserWorkspaceRole,
+  unauthorized,
+} from "@/lib/supabase/route-handler";
 
 export async function GET() {
   try {
-    const { user } = await getRouteContext();
-    return NextResponse.json(user);
+    const { user, workspace } = await getRouteContext();
+    const workspaceRole = await getUserWorkspaceRole(user.id, workspace.id);
+    return NextResponse.json({ ...user, workspaceRole });
   } catch {
     return unauthorized();
   }

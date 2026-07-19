@@ -138,7 +138,7 @@ function TaskDetailBody({
   const update = useUpdateTask();
   const deleteTask = useDeleteTask();
   const currentUser = useAuthStore((s) => s.user);
-  const isOwner = currentUser?.id === task.createdBy;
+  const isOwner = currentUser?.workspaceRole === "owner";
   const mutations = useTaskDetailMutations(task.id);
   const { data: projectTasks = [] } = useTasks({ projectId: task.projectId });
 

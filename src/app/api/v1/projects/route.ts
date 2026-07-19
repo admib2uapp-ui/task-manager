@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       .eq("workspace_id", workspace.id)
       .order("created_at", { ascending: false });
 
-    if (role !== "owner") {
+    if (role === "general") {
       const { data: memberProjectIds } = await supabaseAdmin
         .from("project_members")
         .select("project_id")

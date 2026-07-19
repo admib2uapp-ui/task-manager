@@ -19,7 +19,7 @@ export async function GET(
     const { projectId } = await params;
 
     const role = await getUserWorkspaceRole(user.id, workspace.id);
-    if (role !== "owner") {
+    if (role === "general") {
       const memberError = await requireProjectMember(user.id, projectId);
       if (memberError) return memberError;
     }

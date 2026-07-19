@@ -64,6 +64,7 @@ export interface User {
   email: string;
   name: string;
   avatarUrl: string | null;
+  workspaceRole?: WorkspaceRole;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }
