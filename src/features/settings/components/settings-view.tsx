@@ -1,8 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { LogOut, Loader2, Monitor, Moon, Sun } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { LogOut, Loader2, Monitor, Moon, Shield, Sun, Users } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -22,12 +22,28 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuthStore } from "@/features/auth/store/auth-store";
 import { authApi } from "@/features/auth/api/auth-api";
+import { useWorkspaceMembers } from "@/features/users/hooks/use-users";
+import { usersApi } from "@/features/users/api/users-api";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Owner",
+  senior: "Senior",
+  general: "General",
+  junior: "Junior",
+};
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -62,6 +78,23 @@ export function SettingsView() {
     onError: (error) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to update profile",
+      );
+    },
+  });
+
+  const { data: members = [] } = useWorkspaceMembers();
+  const queryClient = useQueryClient();
+
+  const updateRole = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
+      usersApi.updateRole(userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users", "workspace-members"] });
+      toast.success("Role updated");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update role",
       );
     },
   });
@@ -174,6 +207,76 @@ export function SettingsView() {
             </div>
           </CardContent>
         </Card>
+
+        {user?.workspaceRole === "owner" && (
+          <Card className="border-border bg-card shadow-soft rounded-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="text-muted-foreground size-4" /> Team
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {members.map((m) => {
+                  const currentRole = m.workspaceRole ?? "general";
+                  const isSelf = m.id === user.id;
+                  return (
+                    <div
+                      key={m.id}
+                      className="hover:bg-accent flex items-center gap-3 rounded-xl px-2 py-2 transition-colors"
+                    >
+                      <Avatar className="size-8 rounded-lg">
+                        {m.avatarUrl && <AvatarImage src={m.avatarUrl} />}
+                        <AvatarFallback className="bg-primary/15 text-primary rounded-lg text-xs">
+                          {getInitials(m.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {m.name}
+                          {isSelf && (
+                            <span className="text-muted-foreground ml-1.5 text-xs font-normal">
+                              (you)
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-muted-foreground truncate text-xs">
+                          {m.email}
+                        </p>
+                      </div>
+                      {isSelf ? (
+                        <span className="bg-muted text-muted-foreground shrink-0 rounded-md px-2.5 py-1 text-xs font-medium capitalize">
+                          {ROLE_LABELS[currentRole] ?? currentRole}
+                        </span>
+                      ) : (
+                        <Select
+                          value={currentRole}
+                          onValueChange={(role) =>
+                            updateRole.mutate({ userId: m.id, role })
+                          }
+                          disabled={updateRole.isPending}
+                        >
+                          <SelectTrigger className="h-8 w-[120px] shrink-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[70]">
+                            <SelectItem value="senior">
+                              <span className="flex items-center gap-2">
+                                <Shield className="size-3.5" /> Senior
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="general">General</SelectItem>
+                            <SelectItem value="junior">Junior</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-border bg-card shadow-soft rounded-2xl">
           <CardHeader>
