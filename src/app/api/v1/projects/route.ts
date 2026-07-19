@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getRouteContext, unauthorized } from "@/lib/supabase/route-handler";
+import {
+  getRouteContext,
+  unauthorized,
+  requireRole,
+  getUserWorkspaceRole,
+} from "@/lib/supabase/route-handler";
 
 function toCamelCase(p: Record<string, unknown>) {
   return {
@@ -25,8 +30,10 @@ function toCamelCase(p: Record<string, unknown>) {
 
 export async function GET(request: Request) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { searchParams } = new URL(request.url);
+
+    const role = await getUserWorkspaceRole(user.id, workspace.id);
 
     let query = supabaseAdmin
       .from("projects")
@@ -38,6 +45,16 @@ export async function GET(request: Request) {
       )
       .eq("workspace_id", workspace.id)
       .order("created_at", { ascending: false });
+
+    if (role !== "owner") {
+      const { data: memberProjectIds } = await supabaseAdmin
+        .from("project_members")
+        .select("project_id")
+        .eq("user_id", user.id);
+
+      const ids = (memberProjectIds || []).map((m) => m.project_id);
+      query = query.in("id", ids.length > 0 ? ids : []);
+    }
 
     const includeArchived = searchParams.get("includeArchived");
     if (includeArchived !== "true") {
@@ -65,6 +82,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { user, workspace } = await getRouteContext();
+
+    const roleError = await requireRole(["owner"], user.id, workspace.id);
+    if (roleError) return roleError;
+
     const body = await request.json();
 
     const { data, error } = await supabaseAdmin
@@ -86,6 +107,12 @@ export async function POST(request: Request) {
     if (error) {
       return NextResponse.json({ detail: error.message }, { status: 400 });
     }
+
+    await supabaseAdmin.from("project_members").insert({
+      project_id: data.id,
+      user_id: user.id,
+      role: "owner",
+    });
 
     if (body.tagIds?.length > 0) {
       await supabaseAdmin.from("project_tags").insert(

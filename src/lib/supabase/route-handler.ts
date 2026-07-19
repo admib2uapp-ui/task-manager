@@ -24,8 +24,71 @@ function mapSupabaseUser(authUser: {
   };
 }
 
+export async function getUserWorkspaceRole(
+  userId: string,
+  workspaceId: string,
+): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data?.role ?? null;
+}
+
+export async function requireRole(
+  allowedRoles: string[],
+  userId: string,
+  workspaceId: string,
+): Promise<NextResponse | null> {
+  const role = await getUserWorkspaceRole(userId, workspaceId);
+  if (role && allowedRoles.includes(role)) return null;
+  return forbidden("You do not have permission to perform this action");
+}
+
+export async function getProjectRole(
+  userId: string,
+  projectId: string,
+): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("project_members")
+    .select("role")
+    .eq("project_id", projectId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data?.role ?? null;
+}
+
+export async function requireProjectMember(
+  userId: string,
+  projectId: string,
+): Promise<NextResponse | null> {
+  const role = await getProjectRole(userId, projectId);
+  if (role) return null;
+  return forbidden("You are not a member of this project");
+}
+
+export async function requireProjectRole(
+  allowedRoles: string[],
+  userId: string,
+  projectId: string,
+): Promise<NextResponse | null> {
+  const role = await getProjectRole(userId, projectId);
+  if (role && allowedRoles.includes(role)) return null;
+  return forbidden("You do not have the required project role");
+}
+
 export function forbidden(message = "You do not have permission") {
   return NextResponse.json({ detail: message }, { status: 403 });
+}
+
+export function requireWorkspaceOwner(
+  userId: string,
+  workspace: Workspace,
+): NextResponse | null {
+  if (userId === workspace.ownerId) return null;
+  return forbidden("Only the workspace owner can perform this action");
 }
 
 export async function requireOwnership(
@@ -44,7 +107,7 @@ export async function requireOwnership(
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (membership?.role === "owner" || membership?.role === "admin") return null;
+  if (membership?.role === "owner") return null;
 
   return forbidden("You do not have permission to modify this resource");
 }
@@ -102,7 +165,7 @@ async function ensureWorkspace(userId: string): Promise<Workspace> {
   if (existing) {
     await supabaseAdmin
       .from("workspace_members")
-      .insert({ workspace_id: existing.id, user_id: userId, role: "member" });
+      .insert({ workspace_id: existing.id, user_id: userId, role: "general" });
     return existing;
   }
 

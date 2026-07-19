@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getRouteContext, unauthorized, insertAuditLog } from "@/lib/supabase/route-handler";
+import {
+  getRouteContext,
+  unauthorized,
+  requireRole,
+  getUserWorkspaceRole,
+  insertAuditLog,
+} from "@/lib/supabase/route-handler";
 
 export async function GET(request: Request) {
   try {
-    const { workspace } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
     const { searchParams } = new URL(request.url);
+
+    const role = await getUserWorkspaceRole(user.id, workspace.id);
 
     const projectId = searchParams.get("projectId");
     const status = searchParams.get("status");
@@ -27,6 +35,30 @@ export async function GET(request: Request) {
       .order("position", { ascending: true });
 
     if (projectId) query = query.eq("project_id", projectId);
+
+    // Owner: sees all tasks (no filter)
+    // Senior: sees tasks only in projects they are a member of
+    if (role === "senior") {
+      const { data: memberProjectIds } = await supabaseAdmin
+        .from("project_members")
+        .select("project_id")
+        .eq("user_id", user.id);
+      const ids = (memberProjectIds || []).map((m) => m.project_id);
+      query = query.in("project_id", ids.length > 0 ? ids : []);
+    }
+
+    // Junior/General: only tasks assigned to self within member projects
+    if (role === "junior" || role === "general") {
+      const { data: memberProjectIds } = await supabaseAdmin
+        .from("project_members")
+        .select("project_id")
+        .eq("user_id", user.id);
+      const ids = (memberProjectIds || []).map((m) => m.project_id);
+      query = query
+        .in("project_id", ids.length > 0 ? ids : [])
+        .eq("assignee_id", user.id);
+    }
+
     if (status) query = query.eq("status", status);
     if (priority) query = query.eq("priority", priority);
     if (assigneeId) query = query.eq("assignee_id", assigneeId);
@@ -56,7 +88,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { user } = await getRouteContext();
+    const { user, workspace } = await getRouteContext();
+
+    const roleError = await requireRole(["owner"], user.id, workspace.id);
+    if (roleError) return roleError;
+
     const body = await request.json();
 
     const { data: maxPos } = await supabaseAdmin
