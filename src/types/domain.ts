@@ -53,6 +53,50 @@ export const NOTIFICATION_TYPE = {
   REMINDER: "reminder",
   OVERDUE: "overdue",
   MENTION: "mention",
+  TASK_CREATED: "task_created",
+  TASK_ASSIGNED: "task_assigned",
+  TASK_UPDATED: "task_updated",
+  TASK_REOPENED: "task_reopened",
+  TASK_DELETED: "task_deleted",
+  PRIORITY_CHANGED: "priority_changed",
+  STATUS_CHANGED: "status_changed",
+  DEADLINE_CHANGED: "deadline_changed",
+  ATTACHMENT_ADDED: "attachment_added",
+  PROJECT_CREATED: "project_created",
+  PROJECT_UPDATED: "project_updated",
+  PROJECT_ARCHIVED: "project_archived",
+  PROJECT_RESTORED: "project_restored",
+  MEMBER_JOINED: "member_joined",
+  MEMBER_REMOVED: "member_removed",
+  ROLE_CHANGED: "role_changed",
+  PROJECT_COMPLETED: "project_completed",
+  CHAT_REPLY: "chat_reply",
+  CHAT_REACTION: "chat_reaction",
+  CHAT_PINNED: "chat_pinned",
+  CHAT_NEW_MESSAGE: "chat_new_message",
+  THREAD_REPLY: "thread_reply",
+  AI_ANALYSIS_COMPLETE: "ai_analysis_complete",
+  AI_REPORT_READY: "ai_report_ready",
+  AI_DOCS_READY: "ai_docs_ready",
+  AI_TASKS_READY: "ai_tasks_ready",
+  AI_SECURITY_SCAN: "ai_security_scan",
+  AI_PERFORMANCE_REPORT: "ai_performance_report",
+  GITHUB_REPO_CONNECTED: "github_repo_connected",
+  GITHUB_REPO_DISCONNECTED: "github_repo_disconnected",
+  GITHUB_SCAN_STARTED: "github_scan_started",
+  GITHUB_SCAN_COMPLETED: "github_scan_completed",
+  GITHUB_AI_ANALYSIS: "github_ai_analysis",
+  GITHUB_PR_LINKED: "github_pr_linked",
+  GITHUB_ISSUE_LINKED: "github_issue_linked",
+  LOGIN_NEW_DEVICE: "login_new_device",
+  PASSWORD_CHANGED: "password_changed",
+  EMAIL_CHANGED: "email_changed",
+  PERMISSION_CHANGED: "permission_changed",
+  API_KEY_UPDATED: "api_key_updated",
+  WORKSPACE_INVITATION: "workspace_invitation",
+  WORKSPACE_ANNOUNCEMENT: "workspace_announcement",
+  MAINTENANCE_NOTICE: "maintenance_notice",
+  SYSTEM_UPDATE: "system_update",
 } as const;
 export type NotificationType =
   (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
@@ -245,5 +289,74 @@ export interface Notification {
   entityType: string | null;
   entityId: ID | null;
   isRead: boolean;
+  category: string | null;
+  metadata: Record<string, unknown> | null;
+  readAt: ISODateString | null;
+  createdAt: ISODateString;
+}
+
+/* ----------------------------- Chat ------------------------------------- */
+
+export interface ChatMessage {
+  id: ID;
+  chatId: ID;
+  userId: ID;
+  user?: User;
+  body: string;
+  replyToId: ID | null;
+  replyTo?: ChatMessage | null;
+  threadId: ID | null;
+  threadMessages?: ChatMessage[];
+  isEdited: boolean;
+  editedAt: ISODateString | null;
+  reactions?: ChatReaction[];
+  attachments?: ChatAttachment[];
+  mentions?: ChatMention[];
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+export interface ChatReaction {
+  id: ID;
+  messageId: ID;
+  userId: ID;
+  user?: User;
+  emoji: string;
+  createdAt: ISODateString;
+}
+
+export interface ChatReadReceipt {
+  id: ID;
+  messageId: ID;
+  userId: ID;
+  readAt: ISODateString;
+}
+
+export interface ChatAttachment {
+  id: ID;
+  messageId: ID;
+  fileName: string;
+  storedName: string;
+  fileUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: ISODateString;
+}
+
+export interface ChatMention {
+  id: ID;
+  messageId: ID;
+  userId: ID;
+  user?: User;
+  createdAt: ISODateString;
+}
+
+export interface ChatPin {
+  id: ID;
+  chatId: ID;
+  messageId: ID;
+  message?: ChatMessage;
+  pinnedBy: ID;
+  pinnedByUser?: User;
   createdAt: ISODateString;
 }

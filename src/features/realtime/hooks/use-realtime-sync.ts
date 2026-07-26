@@ -41,7 +41,14 @@ export function useRealtimeSync() {
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications" },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chat_messages" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["chat", "messages"] });
         },
       )
       .on(

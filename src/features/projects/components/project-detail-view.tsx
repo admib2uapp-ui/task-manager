@@ -34,6 +34,7 @@ import { getProjectIcon } from "@/config/icons";
 import { MilestonesList } from "@/features/projects/components/milestones-list";
 import { ProjectFormDialog } from "@/features/projects/components/project-form-dialog";
 import { ProjectBoard } from "@/features/tasks/components/project-board";
+import { ProjectChat } from "@/features/chat/components/project-chat";
 import {
   useProject,
   useUpdateProject,
@@ -199,7 +200,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      <Tabs defaultValue="board" className="mt-8">
+      <Tabs defaultValue="board" className="mt-8 flex min-h-0 flex-1 flex-col">
         <TabsList>
           <TabsTrigger value="board">
             Board
@@ -210,6 +211,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             Milestones
             {project.milestoneCount ? ` (${project.milestoneCount})` : ""}
           </TabsTrigger>
+          <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -285,6 +287,10 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
 
         <TabsContent value="milestones" className="mt-6">
           <MilestonesList projectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="chat" className="mt-0 flex-1">
+          <ProjectChat projectId={project.id} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
