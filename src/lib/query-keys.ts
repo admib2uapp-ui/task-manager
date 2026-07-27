@@ -23,4 +23,11 @@ export const queryKeys = {
     board: (projectId: string) => ["tasks", "board", projectId] as const,
     detail: (id: string) => ["tasks", "detail", id] as const,
   },
+  notifications: {
+    all: ["notifications"] as const,
+    list: (filters?: unknown) => ["notifications", "list", filters ?? {}] as const,
+    unread: ["notifications", "unread"] as const,
+    history: (filters?: unknown) => ["notifications", "history", filters ?? {}] as const,
+    preferences: ["notifications", "preferences"] as const,
+  },
 } as const;

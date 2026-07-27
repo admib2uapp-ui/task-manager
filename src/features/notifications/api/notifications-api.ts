@@ -9,6 +9,7 @@ export interface AppNotification {
   entityType: string | null;
   entityId: string | null;
   isRead: boolean;
+  category: string | null;
   createdAt: string;
 }
 

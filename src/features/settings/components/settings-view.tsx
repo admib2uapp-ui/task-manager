@@ -37,6 +37,7 @@ import { usersApi } from "@/features/users/api/users-api";
 import { getInitials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { NotificationPreferenceSection } from "@/features/notifications/components/notification-preference-section";
 
 const ROLE_LABELS: Record<string, string> = {
   owner: "Owner",
@@ -277,6 +278,8 @@ export function SettingsView() {
             </CardContent>
           </Card>
         )}
+
+        <NotificationPreferenceSection />
 
         <Card className="border-border bg-card shadow-soft rounded-2xl">
           <CardHeader>
