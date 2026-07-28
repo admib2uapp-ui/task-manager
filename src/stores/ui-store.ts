@@ -12,6 +12,8 @@ interface UIState {
   quickCreateOpen: boolean;
   /** globally-opened task detail (e.g. from command palette) */
   openTaskId: string | null;
+  /** AI Manager floating widget */
+  aiManagerOpen: boolean;
 
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -20,6 +22,7 @@ interface UIState {
   toggleCommandPalette: () => void;
   setQuickCreateOpen: (open: boolean) => void;
   setOpenTaskId: (id: string | null) => void;
+  setAiManagerOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -30,6 +33,7 @@ export const useUIStore = create<UIState>()(
       commandPaletteOpen: false,
       quickCreateOpen: false,
       openTaskId: null,
+      aiManagerOpen: false,
 
       toggleSidebar: () =>
         set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -40,6 +44,7 @@ export const useUIStore = create<UIState>()(
         set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
       setQuickCreateOpen: (open) => set({ quickCreateOpen: open }),
       setOpenTaskId: (id) => set({ openTaskId: id }),
+      setAiManagerOpen: (open) => set({ aiManagerOpen: open }),
     }),
     {
       name: "orbit.ui",

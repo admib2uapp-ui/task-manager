@@ -7,6 +7,7 @@ import { AppTopbar } from "@/components/layout/app-topbar";
 import { CommandPalette } from "@/features/command-palette/components/command-palette";
 import { QuickTaskDialog } from "@/features/tasks/components/quick-task-dialog";
 import { TaskDetailSheet } from "@/features/tasks/components/task-detail-sheet";
+import { AiManagerFloating } from "@/features/ai-manager/components/ai-manager-floating";
 import { useRealtimeSync } from "@/features/realtime/hooks/use-realtime-sync";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useUIStore } from "@/stores/ui-store";
@@ -40,6 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         onOpenChange={(o) => !o && setOpenTaskId(null)}
         onDeleted={() => setOpenTaskId(null)}
       />
+      <AiManagerFloating />
     </div>
   );
 }

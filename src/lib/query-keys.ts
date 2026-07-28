@@ -30,4 +30,8 @@ export const queryKeys = {
     history: (filters?: unknown) => ["notifications", "history", filters ?? {}] as const,
     preferences: ["notifications", "preferences"] as const,
   },
+  ai: {
+    conversations: (workspaceId?: string) => ["ai", "conversations", workspaceId] as const,
+    messages: (conversationId: string) => ["ai", "messages", conversationId] as const,
+  },
 } as const;
