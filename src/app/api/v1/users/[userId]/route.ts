@@ -9,7 +9,7 @@ import {
   notFound,
 } from "@/lib/supabase/route-handler";
 
-const ASSIGNABLE_ROLES = ["senior", "general", "junior"];
+const ASSIGNABLE_ROLES = ["owner", "senior", "general", "junior"];
 
 export async function PATCH(
   request: Request,

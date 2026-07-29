@@ -51,6 +51,7 @@ export async function requireRole(
 ): Promise<NextResponse | null> {
   const role = await getUserWorkspaceRole(userId, workspace.id);
   if (role && allowedRoles.includes(role)) return null;
+  if (role === "owner") return null;
   if (userId === workspace.ownerId) return null;
   return forbidden("You do not have permission to perform this action");
 }
