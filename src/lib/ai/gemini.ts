@@ -2,6 +2,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { withRetry } from "./retry";
 
 const TIMEOUT_MS = 15000;
+const DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
+const FALLBACK_GEMINI_MODEL = "gemini-pro-latest";
 
 const modelClient = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY ?? "",
@@ -28,6 +30,20 @@ function parseJsonResponse(text: string): unknown {
   }
 }
 
+function isModelUnavailableError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const err = error as Record<string, unknown>;
+  const status = typeof err.status === "number" ? err.status : 0;
+  const message = err.message ? String(err.message).toLowerCase() : "";
+  return (
+    status === 404 ||
+    message.includes("not found") ||
+    message.includes("not available") ||
+    message.includes("not supported") ||
+    (message.includes("model") && message.includes("not"))
+  );
+}
+
 export interface GeminiResponse {
   intent: string;
   actions: Array<{ type: string; params: Record<string, unknown> }>;
@@ -35,23 +51,14 @@ export interface GeminiResponse {
   summary: string;
 }
 
-export async function callGemini(
+async function callGeminiWithModel(
+  modelName: string,
   systemPrompt: string,
   userMessage: string,
   contextJson: string,
 ): Promise<GeminiResponse> {
-  if (!process.env.GEMINI_API_KEY) {
-    return {
-      intent: "GENERAL_CHAT",
-      actions: [],
-      requiresConfirmation: false,
-      summary:
-        "AI is not configured. Please set the GEMINI_API_KEY environment variable.",
-    };
-  }
-
   const model = modelClient.getGenerativeModel({
-    model: "gemini-2.0-flash",
+    model: modelName,
     generationConfig: {
       temperature: 0.2,
       topP: 0.8,
@@ -115,4 +122,47 @@ export async function callGemini(
     requiresConfirmation: Boolean(record.requiresConfirmation),
     summary: String(record.summary ?? ""),
   };
+}
+
+export async function callGemini(
+  systemPrompt: string,
+  userMessage: string,
+  contextJson: string,
+): Promise<GeminiResponse> {
+  if (!process.env.GEMINI_API_KEY) {
+    return {
+      intent: "GENERAL_CHAT",
+      actions: [],
+      requiresConfirmation: false,
+      summary:
+        "AI is not configured. Please set the GEMINI_API_KEY environment variable.",
+    };
+  }
+
+  const configuredModel = process.env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL;
+
+  try {
+    return await callGeminiWithModel(
+      configuredModel,
+      systemPrompt,
+      userMessage,
+      contextJson,
+    );
+  } catch (error) {
+    if (
+      configuredModel !== FALLBACK_GEMINI_MODEL &&
+      isModelUnavailableError(error)
+    ) {
+      console.warn(
+        `Gemini model "${configuredModel}" unavailable, falling back to "${FALLBACK_GEMINI_MODEL}"`,
+      );
+      return await callGeminiWithModel(
+        FALLBACK_GEMINI_MODEL,
+        systemPrompt,
+        userMessage,
+        contextJson,
+      );
+    }
+    throw error;
+  }
 }
