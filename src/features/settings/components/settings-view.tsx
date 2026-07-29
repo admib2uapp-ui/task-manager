@@ -255,7 +255,7 @@ export function SettingsView() {
                           onValueChange={(role) =>
                             updateRole.mutate({ userId: m.id, role })
                           }
-                          disabled={updateRole.isPending || currentRole === "owner"}
+                          disabled={updateRole.isPending}
                         >
                           <SelectTrigger className="h-8 w-[120px] shrink-0">
                             <SelectValue />

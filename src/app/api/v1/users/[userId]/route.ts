@@ -47,8 +47,17 @@ export async function PATCH(
     }
 
     const normalizedRole = ROLE_MAP[membership.role] ?? membership.role;
-    if (normalizedRole === "owner") {
-      return badRequest("Cannot change the owner's role");
+
+    if (normalizedRole === "owner" && role !== "owner") {
+      const { count } = await supabaseAdmin
+        .from("workspace_members")
+        .select("*", { count: "exact", head: true })
+        .eq("workspace_id", workspace.id)
+        .eq("role", "owner");
+
+      if (count !== null && count <= 1) {
+        return badRequest("Cannot remove the last Owner.");
+      }
     }
 
     const { error } = await supabaseAdmin
