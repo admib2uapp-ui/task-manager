@@ -68,6 +68,8 @@ export const NOTIFICATION_TYPE = {
   PROJECT_RESTORED: "project_restored",
   MEMBER_JOINED: "member_joined",
   MEMBER_REMOVED: "member_removed",
+  MEMBER_BLOCKED: "member_blocked",
+  MEMBER_UNBLOCKED: "member_unblocked",
   ROLE_CHANGED: "role_changed",
   PROJECT_COMPLETED: "project_completed",
   CHAT_REPLY: "chat_reply",
@@ -103,12 +105,15 @@ export type NotificationType =
 
 /* ----------------------------- Entities -------------------------------- */
 
+export type MemberStatus = "active" | "blocked" | "removed";
+
 export interface User {
   id: ID;
   email: string;
   name: string;
   avatarUrl: string | null;
   workspaceRole?: WorkspaceRole;
+  status?: MemberStatus;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }

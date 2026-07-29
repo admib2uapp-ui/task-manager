@@ -2,16 +2,44 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LogOut, Loader2, Monitor, Moon, Shield, Sun } from "lucide-react";
+import {
+  Ban,
+  Loader2,
+  LogOut,
+  Monitor,
+  Moon,
+  MoreVertical,
+  Shield,
+  Sun,
+  Trash2,
+  UserCheck,
+} from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Form,
   FormControl,
@@ -99,6 +127,59 @@ export function SettingsView() {
       );
     },
   });
+
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "remove" | "block" | "unblock";
+    member: { id: string; name: string };
+  } | null>(null);
+
+  const removeMember = useMutation({
+    mutationFn: (userId: string) => usersApi.remove(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users", "workspace-members"] });
+      toast.success("Member removed");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to remove member",
+      );
+    },
+  });
+
+  const blockMember = useMutation({
+    mutationFn: (userId: string) => usersApi.block(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users", "workspace-members"] });
+      toast.success("Member blocked");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to block member",
+      );
+    },
+  });
+
+  const unblockMember = useMutation({
+    mutationFn: (userId: string) => usersApi.unblock(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users", "workspace-members"] });
+      toast.success("Member unblocked");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to unblock member",
+      );
+    },
+  });
+
+  const handleConfirm = useCallback(() => {
+    if (!confirmAction) return;
+    const { type, member } = confirmAction;
+    if (type === "remove") removeMember.mutate(member.id);
+    else if (type === "block") blockMember.mutate(member.id);
+    else if (type === "unblock") unblockMember.mutate(member.id);
+    setConfirmAction(null);
+  }, [confirmAction, removeMember, blockMember, unblockMember]);
 
   return (
     <PageContainer className="max-w-3xl">
@@ -220,6 +301,7 @@ export function SettingsView() {
               <div className="space-y-2">
                 {members.map((m) => {
                   const currentRole = m.workspaceRole ?? "general";
+                  const memberStatus = m.status ?? "active";
                   const isSelf = m.id === user.id;
                   return (
                     <div
@@ -240,6 +322,11 @@ export function SettingsView() {
                               (you)
                             </span>
                           )}
+                          {memberStatus === "blocked" && (
+                            <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                              <Ban className="size-3" /> Blocked
+                            </span>
+                          )}
                         </p>
                         <p className="text-muted-foreground truncate text-xs">
                           {m.email}
@@ -250,29 +337,79 @@ export function SettingsView() {
                           {ROLE_LABELS[currentRole] ?? currentRole}
                         </span>
                       ) : (
-                        <Select
-                          value={currentRole}
-                          onValueChange={(role) =>
-                            updateRole.mutate({ userId: m.id, role })
-                          }
-                          disabled={updateRole.isPending}
-                        >
-                          <SelectTrigger className="h-8 w-[120px] shrink-0">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="z-[70]">
-                            <SelectItem value="owner">
-                              <span className="flex items-center gap-2">👑 Owner</span>
-                            </SelectItem>
-                            <SelectItem value="senior">
-                              <span className="flex items-center gap-2">
-                                <Shield className="size-3.5" /> Senior
-                              </span>
-                            </SelectItem>
-                            <SelectItem value="general">General</SelectItem>
-                            <SelectItem value="junior">Junior</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-1">
+                          <Select
+                            value={currentRole}
+                            onValueChange={(role) =>
+                              updateRole.mutate({ userId: m.id, role })
+                            }
+                            disabled={updateRole.isPending}
+                          >
+                            <SelectTrigger className="h-8 w-[120px] shrink-0">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-[70]">
+                              <SelectItem value="owner">
+                                <span className="flex items-center gap-2">👑 Owner</span>
+                              </SelectItem>
+                              <SelectItem value="senior">
+                                <span className="flex items-center gap-2">
+                                  <Shield className="size-3.5" /> Senior
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="general">General</SelectItem>
+                              <SelectItem value="junior">Junior</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 shrink-0">
+                                <MoreVertical className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="z-[70]">
+                              {memberStatus === "blocked" ? (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setConfirmAction({
+                                      type: "unblock",
+                                      member: { id: m.id, name: m.name },
+                                    })
+                                  }
+                                >
+                                  <UserCheck className="size-4" />
+                                  Unblock Member
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setConfirmAction({
+                                      type: "block",
+                                      member: { id: m.id, name: m.name },
+                                    })
+                                  }
+                                >
+                                  <Ban className="size-4" />
+                                  Block Member
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() =>
+                                  setConfirmAction({
+                                    type: "remove",
+                                    member: { id: m.id, name: m.name },
+                                  })
+                                }
+                              >
+                                <Trash2 className="size-4" />
+                                Remove Member
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       )}
                     </div>
                   );
@@ -281,6 +418,61 @@ export function SettingsView() {
             </CardContent>
           </Card>
         )}
+
+        <AlertDialog
+          open={confirmAction !== null}
+          onOpenChange={(open) => {
+            if (!open) setConfirmAction(null);
+          }}
+        >
+          <AlertDialogContent size="sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {confirmAction?.type === "remove"
+                  ? "Remove Member?"
+                  : confirmAction?.type === "block"
+                    ? "Block Member?"
+                    : "Unblock Member?"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirmAction?.type === "remove" && (
+                  <>
+                    Member: <strong>{confirmAction.member.name}</strong>
+                    <br />
+                    This will remove this user from the project.
+                  </>
+                )}
+                {confirmAction?.type === "block" && (
+                  <>
+                    Member: <strong>{confirmAction.member.name}</strong>
+                    <br />
+                    This user will lose access to the project until unblocked.
+                  </>
+                )}
+                {confirmAction?.type === "unblock" && (
+                  <>
+                    Member: <strong>{confirmAction.member.name}</strong>
+                    <br />
+                    This user will regain access to the project.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant={confirmAction?.type === "unblock" ? "default" : "destructive"}
+                onClick={handleConfirm}
+              >
+                {confirmAction?.type === "remove"
+                  ? "Remove"
+                  : confirmAction?.type === "block"
+                    ? "Block"
+                    : "Unblock"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <NotificationPreferenceSection />
 

@@ -30,6 +30,19 @@ export const ROLE_MAP: Record<string, string> = {
   viewer: "junior",
 };
 
+export async function getMemberStatus(
+  userId: string,
+  workspaceId: string,
+): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("workspace_members")
+    .select("status")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data?.status ?? null;
+}
+
 export async function getUserWorkspaceRole(
   userId: string,
   workspaceId: string,
@@ -49,6 +62,9 @@ export async function requireRole(
   userId: string,
   workspace: Workspace,
 ): Promise<NextResponse | null> {
+  const status = await getMemberStatus(userId, workspace.id);
+  if (status === "blocked") return forbidden("Your account has been blocked");
+
   const role = await getUserWorkspaceRole(userId, workspace.id);
   if (role && allowedRoles.includes(role)) return null;
   if (role === "owner") return null;
