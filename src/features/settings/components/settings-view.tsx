@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LogOut, Loader2, Monitor, Moon, Shield, Sun, Users } from "lucide-react";
+import { LogOut, Loader2, Monitor, Moon, Shield, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -213,7 +213,7 @@ export function SettingsView() {
           <Card className="border-border bg-card shadow-soft rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="text-muted-foreground size-4" /> Team
+                <Shield className="text-muted-foreground size-4" /> Role Management
               </CardTitle>
             </CardHeader>
             <CardContent>
