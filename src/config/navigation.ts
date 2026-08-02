@@ -11,6 +11,7 @@ import {
   Settings,
   Timer,
   Users,
+  Orbit,
 } from "lucide-react";
 
 export interface NavItem {
@@ -42,6 +43,17 @@ export const navigation: NavSection[] = [
       { title: "Calendar", href: "/calendar", icon: Calendar },
       { title: "Time Tracking", href: "/time-tracking", icon: Timer },
       { title: "Analytics", href: "/analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Visualize",
+    items: [
+      {
+        title: "Orbit View",
+        href: "/orbit-view",
+        icon: Orbit,
+        exact: true,
+      },
     ],
   },
   {

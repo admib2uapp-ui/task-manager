@@ -34,4 +34,14 @@ export const queryKeys = {
     conversations: (workspaceId?: string) => ["ai", "conversations", workspaceId] as const,
     messages: (conversationId: string) => ["ai", "messages", conversationId] as const,
   },
+  orbit: {
+    hub: (projectId: string) => ["orbit", "hub", projectId] as const,
+    ideas: (projectId?: string) => ["orbit", "ideas", projectId] as const,
+    idea: (id: string) => ["orbit", "idea", id] as const,
+    testing: (taskId: string) => ["orbit", "testing", taskId] as const,
+    sprints: (projectId: string) => ["orbit", "sprints", projectId] as const,
+    sprint: (id: string) => ["orbit", "sprint", id] as const,
+    risks: (projectId: string) => ["orbit", "risks", projectId] as const,
+    analytics: (projectId: string) => ["orbit", "analytics", projectId] as const,
+  },
 } as const;

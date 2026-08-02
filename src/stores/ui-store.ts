@@ -14,6 +14,8 @@ interface UIState {
   openTaskId: string | null;
   /** AI Manager floating widget */
   aiManagerOpen: boolean;
+  /** Galaxy View preferred */
+  galaxyView: boolean;
 
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -23,6 +25,7 @@ interface UIState {
   setQuickCreateOpen: (open: boolean) => void;
   setOpenTaskId: (id: string | null) => void;
   setAiManagerOpen: (open: boolean) => void;
+  setGalaxyView: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -34,6 +37,9 @@ export const useUIStore = create<UIState>()(
       quickCreateOpen: false,
       openTaskId: null,
       aiManagerOpen: false,
+      galaxyView: false,
+
+      setGalaxyView: (open) => set({ galaxyView: open }),
 
       toggleSidebar: () =>
         set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -48,7 +54,10 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: "orbit.ui",
-      partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed }),
+      partialize: (state) => ({
+        sidebarCollapsed: state.sidebarCollapsed,
+        galaxyView: state.galaxyView,
+      }),
     },
   ),
 );

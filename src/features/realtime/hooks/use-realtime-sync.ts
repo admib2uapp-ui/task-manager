@@ -58,6 +58,55 @@ export function useRealtimeSync() {
           queryClient.invalidateQueries({ queryKey: ["time-entries"] });
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orbit_ideas" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["orbit", "ideas"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orbit_idea_votes" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["orbit", "ideas"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orbit_idea_reactions" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["orbit", "ideas"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orbit_testing_metadata" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["orbit", "testing"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orbit_sprints" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["orbit", "sprints"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orbit_risk_nodes" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["orbit", "risks"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "project_analytics_snapshots" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["orbit", "analytics"] });
+        },
+      )
       .subscribe();
 
     return () => {

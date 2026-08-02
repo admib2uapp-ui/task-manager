@@ -26,7 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <MobileSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar />
-        <main className="flex-1 scrollbar-thin overflow-y-auto">
+        <main className="relative flex-1 scrollbar-thin overflow-y-auto">
           {children}
         </main>
       </div>
